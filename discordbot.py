@@ -1,17 +1,21 @@
 import discord
 from discord import app_commands
 from discord.ext import tasks
-import config
 import random
+from datetime import time, timezone, timedelta, datetime
+# made for this prj
+import config
 import make_embed
 import model
 import util
 import error
 
+# init
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 cooldown_obj = app_commands.Cooldown(1, config.CD_MINING) # クールダウン用オブジェクト
+JST = timezone(timedelta(hours=+9), "JST")
 
 # Bot起動時に呼び出される関数
 @client.event
@@ -20,15 +24,27 @@ async def on_ready():
     await model.create_zmdb()
     # スラッシュコマンドを起動
     await tree.sync()
+    # 定時アナウンス開始
+    mine_announce.start()
     print("Ready!")
 
 # クールダウンチェック用のオブジェクト、
 def cooldown_checker(interaction: discord.Interaction):
     return cooldown_obj
 
-# button = discord.ui.Button(label="ジルコン採掘", style=discord.ButtonStyle.primary, custom_id="mining_zircon")
-# view = discord.ui.View()
-# view.add_item(button)
+# 毎日0時の採掘アナウンス
+@tasks.loop(seconds=60)
+async def mine_announce():
+    now = datetime.now(JST)
+    if now.hour == 0 and now.minute == 0:
+        # メッセージ作成部
+        text = "今日も元気に採掘しましょう！ :gem:"
+        button = discord.ui.Button(label="ジルコン採掘", style=discord.ButtonStyle.primary, custom_id="mining_zircon")
+        view = discord.ui.View()
+        view.add_item(button)
+        # 送信処理
+        channel = client.get_channel(config.CHID_MINING)
+        await channel.send(content=text, view=view)
 
 @tree.command(name="zircon", description="ジルコン採掘をします")
 @app_commands.checks.dynamic_cooldown(cooldown_checker)
