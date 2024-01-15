@@ -95,7 +95,7 @@ async def slash_total(interaction: discord.Interaction, all:str=""):
         if result == None:
             await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
             return
-        embed = make_embed.stats_all(result, config.COUNTRYS)
+        embed = make_embed.stats_all(result, config.COUNTRIES)
         await interaction.response.send_message(embed=embed, ephemeral=True)
     else:
         # 発火者のロールを参照して採掘合計を返す、結果がNoneの場合は無視

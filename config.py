@@ -7,6 +7,7 @@ import discord
 #### Load Env ####
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 DB_MINING = os.getenv('DB_NAME')
+# TODO: 以下は本番用に変更する
 CHID_MINING = int(os.getenv('CHID_MINING')) # 採掘用ChID
 B_CHAT = int(os.getenv('B_CHAT'))
 F_CHAT = int(os.getenv('F_CHAT'))
@@ -35,8 +36,8 @@ GLORY_FLAG = discord.File("./assets/Glory.jpg", filename="Glory.jpg")
 PEACEFUL_FLAG = discord.File("./assets/Peaceful.jpg", filename="Peaceful.jpg")
 
 # country roles id
-# TODO: 本番ではidとchidを変更する, 同時に国旗ファイル名も変える
-COUNTRYS = [
+
+COUNTRIES = [
     {'id':B_ROLE, 'name':'Brave',    'chid':B_CHAT,    'stmp':':B_:',   'img':BRAVE_FLAG}, # brave
     {'id':F_ROLE, 'name':'Freedom',  'chid':F_CHAT,    'stmp':':F_:',   'img':FREEDOM_FLAG}, # freedom
     {'id':G_ROLE, 'name':'Glory',    'chid':G_CHAT,    'stmp':':G_:',   'img':GLORY_FLAG}, # glory
