@@ -43,3 +43,5 @@ COUNTRYS = [
     {'id':P_ROLE, 'name':'Peaceful', 'chid':P_CHAT,    'stmp':':P_:',   'img':PEACEFUL_FLAG}  # peaceful
 ]
 
+MSG_LETS_MINING = "今日も元気に採掘しましょう！ :gem:"
+MSG_ONCE_MINING = '今日の採掘は完了しています！また明日来てね！'

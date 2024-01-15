@@ -28,7 +28,7 @@ async def select_zm_user(userid, roleid):
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT userid, roleid, zirnum
+                SELECT userid, roleid, zirnum, updated_at
                 FROM MINING 
                 WHERE userid = ?
                 AND roleid = ?
@@ -40,7 +40,7 @@ async def select_zm_user(userid, roleid):
     finally:
         connection.close()
 
-    # [0]=userid, [1]=roleid, [2]=zirnum
+    # [0]=userid, [1]=roleid, [2]=zirnum, [3]=updated timestamp(UNIX)
     return result
 
 # 国ごとの合計をすべて取得
