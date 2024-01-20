@@ -19,6 +19,9 @@ G_ROLE = int(os.getenv('G_ROLE')) #Glory所属ロールID
 P_ROLE = int(os.getenv('P_ROLE')) #Peaceful所属ロールID
 ##################
 
+# announce clock
+ANN_HOUR = 0
+ANN_MINUTE = 0
 
 # mining result
 RESULTS = [

@@ -31,8 +31,9 @@ async def on_ready():
 @tasks.loop(seconds=60, reconnect=True)
 async def mine_announce():
     now = datetime.now(JST)
-    if now.hour == 0 and now.minute == 0:
-        # メッセージ作成部
+    if now.hour == 20 and now.minute == 39:
+    # if now.hour == config.ANN_HOUR and now.minute == config.ANN_MINUTE:
+
         text = config.MSG_LETS_MINING
         # 採掘ボタン
         button_mine = discord.ui.Button(
