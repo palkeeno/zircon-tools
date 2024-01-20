@@ -54,7 +54,6 @@ async def mine_announce():
         await channel.send(content=text, view=view)
 
 # @tree.command(name="zircon", description="ジルコン採掘をします")
-@app_commands.checks.dynamic_cooldown(cooldown_checker)
 async def slash_zircon(interaction: discord.Interaction):
     country = util.get_country(interaction.user)
     if await error.check_country(interaction, country):
