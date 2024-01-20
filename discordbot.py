@@ -57,15 +57,19 @@ async def mine_announce():
 @app_commands.checks.dynamic_cooldown(cooldown_checker)
 async def slash_zircon(interaction: discord.Interaction):
     country = util.get_country(interaction.user)
-    # DBから採掘済みかチェック
-    ures = model.select_zm_user(interaction.user.id, country['id'])
-    latest_updated = datetime.fromtimestamp(ures[3], JST).date()
-    now = datetime.now(JST).date()
-    if latest_updated == now :
-        # 採掘済みなら、また明日来るように伝えて終了
     if await error.check_country(interaction, country):
         await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
         return
+    # DBから採掘済みかチェック
+    ures = await model.get_user_result(interaction.user.id, country['id'])
+    # はじめての人でないか判定
+    if ures != None:
+        latest_updated = datetime.fromtimestamp(ures[3], JST).date()
+        now = datetime.now(JST).date()
+        if latest_updated == now :
+            # 採掘済みなら、また明日来るように伝えて終了
+            await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
+            return
     # 採掘結果を出す
     result = util.gacha(random.random(), config.RESULTS)
     embed = make_embed.mining(country, result, interaction.user)
