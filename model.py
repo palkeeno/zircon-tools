@@ -22,7 +22,7 @@ async def create_zmdb():
         connection.close()
 
 # ユーザーごとの結果を返却する
-async def select_zm_user(userid, roleid):
+async def get_user_result(userid, roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -44,7 +44,7 @@ async def select_zm_user(userid, roleid):
     return result
 
 # 国ごとの合計をすべて取得
-async def select_total_all_role():
+async def select_total_all_country():
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -64,7 +64,7 @@ async def select_total_all_role():
     return result
 
 # 指定された国の合計を取得
-async def select_total_by_role(roleid):
+async def select_total_single_country(roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -85,7 +85,7 @@ async def select_total_by_role(roleid):
     return result
 
 # 採掘結果をUPSERT
-async def insert_zm(userid, roleid, zirnum):
+async def insert_mining(userid, roleid, zirnum):
     timestamp = datetime.datetime.now().timestamp()
     try:
         with sqlite3.connect(DB_MINING) as connection:

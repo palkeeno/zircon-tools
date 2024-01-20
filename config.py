@@ -7,16 +7,16 @@ import discord
 #### Load Env ####
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 DB_MINING = os.getenv('DB_NAME')
-# TODO: 以下は本番用に変更する
+
 CHID_MINING = int(os.getenv('CHID_MINING')) # 採掘用ChID
-B_CHAT = int(os.getenv('B_CHAT'))
-F_CHAT = int(os.getenv('F_CHAT'))
-G_CHAT = int(os.getenv('G_CHAT'))
-P_CHAT = int(os.getenv('P_CHAT'))
-B_ROLE = int(os.getenv('B_ROLE'))
-F_ROLE = int(os.getenv('F_ROLE'))
-G_ROLE = int(os.getenv('G_ROLE'))
-P_ROLE = int(os.getenv('P_ROLE'))
+B_CHAT = int(os.getenv('B_CHAT')) #Brave雑談チャンネルID
+F_CHAT = int(os.getenv('F_CHAT')) #Freedom雑談チャンネルID
+G_CHAT = int(os.getenv('G_CHAT')) #Glory雑談チャンネルID
+P_CHAT = int(os.getenv('P_CHAT')) #Peaceful雑談チャンネルID
+B_ROLE = int(os.getenv('B_ROLE')) #Brave所属ロールID
+F_ROLE = int(os.getenv('F_ROLE')) #Freedom所属ロールID
+G_ROLE = int(os.getenv('G_ROLE')) #Glory所属ロールID
+P_ROLE = int(os.getenv('P_ROLE')) #Peaceful所属ロールID
 ##################
 
 
@@ -34,7 +34,6 @@ GLORY_FLAG = discord.File("./assets/Glory.jpg", filename="Glory.jpg")
 PEACEFUL_FLAG = discord.File("./assets/Peaceful.jpg", filename="Peaceful.jpg")
 
 # country roles id
-
 COUNTRIES = [
     {'id':B_ROLE, 'name':'Brave',    'chid':B_CHAT,    'stmp':':B_:',   'img':BRAVE_FLAG}, # brave
     {'id':F_ROLE, 'name':'Freedom',  'chid':F_CHAT,    'stmp':':F_:',   'img':FREEDOM_FLAG}, # freedom
