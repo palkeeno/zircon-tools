@@ -46,3 +46,4 @@ COUNTRIES = [
 
 MSG_LETS_MINING = "今日も元気に採掘しましょう！ :gem:"
 MSG_ONCE_MINING = '今日の採掘は完了しています！また明日来てね！'
+MSG_COUNTRY_ROLE = 'どこか一つの国に所属してからまた来てね！'

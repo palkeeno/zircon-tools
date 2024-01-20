@@ -15,6 +15,17 @@ def mining(country, result, usr):
     )
     return embed
 
+# 採掘結果Excellentを雑談チャネルに投稿するときのembed
+def excellent(usr):
+    embed = discord.Embed(
+        title="Excellent発掘しました！ :gem::gem::gem:",
+        description="",
+        color=0x00ff00
+    )
+    embed.set_author(name=usr.name, icon_url=usr.avatar.url)
+
+    return embed
+
 # 1国分の採掘合計embed
 def stats_role(result, country):
     embed = discord.Embed(

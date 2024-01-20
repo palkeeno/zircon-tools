@@ -77,6 +77,11 @@ async def slash_zircon(interaction: discord.Interaction):
     await model.insert_mining(interaction.user.id, country['id'], result['zirnum'])
     # メッセージを送信
     await interaction.response.send_message(embed=embed, ephemeral=True)
+    # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
+    if result['id'] == 0:
+        exc_embed = make_embed.excellent(interaction.user)
+        channel = client.get_channel(country['chid'])
+        await channel.send(embed=exc_embed)
 
 # @tree.command(name="total", description="自国の採掘総量を確認します。引数に all 指定で4か国分表示します。")
 async def slash_total(interaction: discord.Interaction, all:str=""):
