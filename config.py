@@ -19,8 +19,6 @@ G_ROLE = int(os.getenv('G_ROLE'))
 P_ROLE = int(os.getenv('P_ROLE'))
 ##################
 
-# cooldown time
-CD_MINING = 30
 
 # mining result
 RESULTS = [

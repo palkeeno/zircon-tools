@@ -14,7 +14,6 @@ import error
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
-cooldown_obj = app_commands.Cooldown(1, config.CD_MINING) # クールダウン用オブジェクト
 JST = timezone(timedelta(hours=+9), "JST")
 
 # Bot起動時に呼び出される関数
@@ -27,10 +26,6 @@ async def on_ready():
     # 定時アナウンス開始
     mine_announce.start()
     print("Ready!")
-
-# クールダウンチェック用のオブジェクト、
-def cooldown_checker(interaction: discord.Interaction):
-    return cooldown_obj
 
 # 毎日0時の採掘アナウンス
 @tasks.loop(seconds=60, reconnect=True)
@@ -63,8 +58,6 @@ async def slash_zircon(interaction: discord.Interaction):
     country = util.get_country(interaction.user)
     # ロールとチャンネルをチェック
     if await error.check_invalid_minor(interaction, country):
-        # 不適格であったら、クールダウンをリセットして終了
-        app_commands.Cooldown.reset(cooldown_obj)
         return
     # DBから採掘済みかチェック
     ures = model.select_zm_user(interaction.user.id, country['id'])
@@ -118,12 +111,6 @@ async def on_interaction(interaction: discord.Interaction):
                 await slash_total(interaction, "all")
     except KeyError:
         pass
-
-# エラー時の処理
-@tree.error
-async def on_command_error(interaction, err):
-    if isinstance(err, app_commands.CommandOnCooldown):
-        await error.catch_cooldown(interaction, int(err.retry_after))
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)
