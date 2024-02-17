@@ -42,6 +42,21 @@ def stats_role(result, country):
     )
     return embed
 
+# 自分の採掘合計embed
+def stats_self(result, usr):
+    embed = discord.Embed(
+        title="",
+        description="所属国でのあなたの採掘量は...",
+        color=0x0000ff
+    )
+    embed.set_author(name=usr.name, icon_url=usr.avatar.url)
+    embed.add_field(
+        name=f"{result[2]} :gem:", 
+        value="", 
+        inline=False
+    )
+    return embed
+
 # 全国の採掘合計embed
 def stats_all(result, country):
     embed = discord.Embed(
@@ -55,7 +70,7 @@ def stats_all(result, country):
             if c['id'] == res[0]:
                 zirnum = int(res[1])
                 embed.add_field(
-                    name=f"{c['name']} {c['stmp']} : {zirnum} ジルコン", 
+                    name=f"{c['stmp']} {c['name']} : {zirnum} :gem:", 
                     value="", 
                     inline=False
                 )

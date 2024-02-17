@@ -1,8 +1,7 @@
 import discord
-from discord import app_commands
 from discord.ext import tasks
 import random
-from datetime import time, timezone, timedelta, datetime
+from datetime import timezone, timedelta, datetime
 # made for this prj
 import config
 import make_embed
@@ -13,7 +12,6 @@ import error
 # init
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
-tree = app_commands.CommandTree(client)
 JST = timezone(timedelta(hours=+9), "JST")
 
 # Bot起動時に呼び出される関数
@@ -21,40 +19,46 @@ JST = timezone(timedelta(hours=+9), "JST")
 async def on_ready():
     # db作成
     await model.create_zmdb()
-    # スラッシュコマンドを起動
-    await tree.sync()
     # 定時アナウンス開始
-    mine_announce.start()
+    check_announce.start()
     print("Ready!")
 
-# 毎日0時の採掘アナウンス
+# 毎日0時を検知して採掘アナウンスを発火
 @tasks.loop(seconds=60, reconnect=True)
-async def mine_announce():
+async def check_announce():
     now = datetime.now(JST)
-    if now.hour == 20 and now.minute == 39:
-    # if now.hour == config.ANN_HOUR and now.minute == config.ANN_MINUTE:
+    if now.hour == config.ANN_HOUR and now.minute == config.ANN_MINUTE:
+        await send_announce()
 
-        text = config.MSG_LETS_MINING
-        # 採掘ボタン
-        button_mine = discord.ui.Button(
-            label="ジルコン採掘",
-            style=discord.ButtonStyle.primary,
-            custom_id="mining_zircon")
-        # 採掘量表示ボタン（引数＝all）
-        button_total = discord.ui.Button(
-            label="各国採掘量",
-            style=discord.ButtonStyle.secondary,
-            custom_id="total_all"
-        )
-        view = discord.ui.View()
-        view.add_item(button_mine)
-        view.add_item(button_total)
+# 採掘アナウンスを送信
+async def send_announce():
+    text = config.MSG_LETS_MINING
+    # 採掘ボタン
+    button_mine = discord.ui.Button(
+        label="ジルコン採掘",
+        style=discord.ButtonStyle.primary,
+        custom_id="mining_zircon")
+    # 自分の採掘量表示ボタン（引数＝self）
+    button_sum_self = discord.ui.Button(
+        label="自己採掘量",
+        style=discord.ButtonStyle.secondary,
+        custom_id="sum_self"
+    )
+    # 採掘量表示ボタン（引数＝all）
+    button_total = discord.ui.Button(
+        label="各国状況",
+        style=discord.ButtonStyle.secondary,
+        custom_id="total_all"
+    )
+    view = discord.ui.View()
+    view.add_item(button_mine)
+    view.add_item(button_sum_self)
+    view.add_item(button_total)
 
-        channel = client.get_channel(config.CHID_MINING)
-        await channel.send(content=text, view=view)
+    channel = client.get_channel(config.CHID_MINING)
+    await channel.send(content=text, view=view)
 
-# @tree.command(name="zircon", description="ジルコン採掘をします")
-async def slash_zircon(interaction: discord.Interaction):
+async def mining_zircon(interaction: discord.Interaction):
     country = util.get_country(interaction.user)
     if await error.check_country(interaction, country):
         await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
@@ -82,19 +86,26 @@ async def slash_zircon(interaction: discord.Interaction):
         channel = client.get_channel(country['chid'])
         await channel.send(embed=exc_embed)
 
-# @tree.command(name="total", description="自国の採掘総量を確認します。引数に all 指定で4か国分表示します。")
-async def slash_total(interaction: discord.Interaction, all:str=""):
+async def get_stats(interaction: discord.Interaction, arg:str=""):
     country = util.get_country(interaction.user)
     if await error.check_country(interaction, country):
         await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
         return
-    # "all"付きなら4か国分、そうでないなら自国分
-    if all == "all":
+    # "all"付きなら4か国分
+    if arg == "all":
         result = await model.select_total_all_country()
         if result == None:
             await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
             return
         embed = make_embed.stats_all(result, config.COUNTRIES)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    # "self"付きなら自分の現在の所属国での採掘量
+    elif arg == "self":
+        result = await model.get_user_result(interaction.user.id, country['id'])
+        if result == None:
+            await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
+            return
+        embed = make_embed.stats_self(result, interaction.user)
         await interaction.response.send_message(embed=embed, ephemeral=True)
     else:
         # 発火者のロールを参照して採掘合計を返す、結果がNoneの場合は無視
@@ -112,11 +123,20 @@ async def on_interaction(interaction: discord.Interaction):
         if interaction.data['component_type'] == 2:
             custom_id = interaction.data['custom_id']
             if custom_id == "mining_zircon":
-                await slash_zircon(interaction)
+                await mining_zircon(interaction)
             elif custom_id == "total_all":
-                await slash_total(interaction, "all")
+                await get_stats(interaction, "all")
+            elif custom_id == "sum_self":
+                await get_stats(interaction, "self")
     except KeyError:
         pass
+
+@client.listen("on_message")
+async def on_message_debug(message):
+    if message.author.bot:
+        return
+    if client. message.content == config.DEBUG_CMD:
+        await send_announce()
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)

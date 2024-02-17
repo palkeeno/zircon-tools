@@ -39,7 +39,6 @@ async def get_user_result(userid, roleid):
         print('DB ERROR: ', e)
     finally:
         connection.close()
-
     # [0]=userid, [1]=roleid, [2]=zirnum, [3]=updated timestamp(UNIX)
     return result
 
@@ -59,7 +58,6 @@ async def select_total_all_country():
         print('DB ERROR: ', e)
     finally:
         connection.close()
-    
     # List of result, [0]=roleid, [1]=total of zirnum
     return result
 
@@ -80,7 +78,6 @@ async def select_total_single_country(roleid):
         print('DB ERROR: ', e)
     finally:
         connection.close()
-    
     # [0]=roleid, [1]=total of zirnum
     return result
 

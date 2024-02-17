@@ -17,6 +17,8 @@ B_ROLE = int(os.getenv('B_ROLE')) #Brave所属ロールID
 F_ROLE = int(os.getenv('F_ROLE')) #Freedom所属ロールID
 G_ROLE = int(os.getenv('G_ROLE')) #Glory所属ロールID
 P_ROLE = int(os.getenv('P_ROLE')) #Peaceful所属ロールID
+
+DEBUG_CMD = os.getenv('DEBUG_CMD')
 ##################
 
 # announce clock
