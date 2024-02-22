@@ -131,11 +131,11 @@ async def on_interaction(interaction: discord.Interaction):
     except KeyError:
         pass
 
-@client.listen("on_message")
-async def on_message_debug(message):
+@client.event
+async def on_message(message):
     if message.author.bot:
         return
-    if client. message.content == config.DEBUG_CMD:
+    if message.content == config.DEBUG_CMD:
         await send_announce()
 
 # Bot起動
