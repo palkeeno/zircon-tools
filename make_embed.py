@@ -29,14 +29,14 @@ def excellent(usr):
 # 1国分の採掘合計embed
 def stats_role(result, country):
     embed = discord.Embed(
-        title="",
+        title="自国の採掘量",
         description="",
         color=0x0000ff
     )
     embed.set_author(name=country['name'])
     embed.set_thumbnail(url=f"attachment://{country['name']}.jpg")
     embed.add_field(
-        name=f"ジルコン採掘合計 :gem: : {result}", 
+        name=f"ジルコン採掘合計 :gem: : {result[1]}", 
         value="", 
         inline=False
     )
@@ -80,7 +80,7 @@ def stats_all(result, country):
         # 結果がまだない国は0個で表示
         if flg == 0:
             embed.add_field(
-                name=f"{c['name']} {c['stmp']} : 0 ジルコン", 
+                name=f"{c['stmp']} {c['name']} : 0 :gem:", 
                 value="", 
                 inline=False
             )

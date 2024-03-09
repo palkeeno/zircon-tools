@@ -44,11 +44,11 @@ async def send_announce():
         style=discord.ButtonStyle.secondary,
         custom_id="sum_self"
     )
-    # 採掘量表示ボタン（引数＝all）
+    # 採掘量表示ボタン（引数＝single）
     button_total = discord.ui.Button(
-        label="各国状況",
+        label="自国状況",
         style=discord.ButtonStyle.secondary,
-        custom_id="total_all"
+        custom_id="total_single"
     )
     view = discord.ui.View()
     view.add_item(button_mine)
@@ -91,29 +91,44 @@ async def get_stats(interaction: discord.Interaction, arg:str=""):
     if await error.check_country(interaction, country):
         await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
         return
-    # "all"付きなら4か国分
-    if arg == "all":
-        result = await model.select_total_all_country()
-        if result == None:
-            await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
-            return
-        embed = make_embed.stats_all(result, config.COUNTRIES)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-    # "self"付きなら自分の現在の所属国での採掘量
+    
     elif arg == "self":
+        # "self"付きなら自分の現在の所属国での採掘量
         result = await model.get_user_result(interaction.user.id, country['id'])
         if result == None:
             await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
             return
         embed = make_embed.stats_self(result, interaction.user)
         await interaction.response.send_message(embed=embed, ephemeral=True)
-    else:
+    elif arg == "single":
         # 発火者のロールを参照して採掘合計を返す、結果がNoneの場合は無視
         result = await model.select_total_single_country(country['id'])
         if result == None:
             result = (country['id'], 0)
-        embed = make_embed.stats_role(result[1], country)
+        embed = make_embed.stats_role(result, country)
         await interaction.response.send_message(file=country['img'], embed=embed, ephemeral=True)
+
+# 4国すべての採掘状況を表示（運営向け）
+async def get_all(interaction: discord.Interaction):
+    result = await model.select_total_all_country()
+    if result == None:
+        await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
+        return
+    embed = make_embed.stats_all(result, config.COUNTRIES)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# 呼び出した人だけが押せるボタン（運営向け）
+async def send_view_to_manage(channel):
+    # 4国すべての採掘量表示ボタン
+    button_total = discord.ui.Button(
+        label="4国状況",
+        style=discord.ButtonStyle.secondary,
+        custom_id="total_all"
+    )
+    view = discord.ui.View()
+    view.add_item(button_total)
+
+    await channel.send(view=view)
 
 # 全イベントの監視
 # ボタン押下の検知->採掘
@@ -124,10 +139,12 @@ async def on_interaction(interaction: discord.Interaction):
             custom_id = interaction.data['custom_id']
             if custom_id == "mining_zircon":
                 await mining_zircon(interaction)
-            elif custom_id == "total_all":
-                await get_stats(interaction, "all")
+            elif custom_id == "total_single":
+                await get_stats(interaction, "single")
             elif custom_id == "sum_self":
                 await get_stats(interaction, "self")
+            elif custom_id == "total_all":
+                await get_all(interaction)
     except KeyError:
         pass
 
@@ -137,6 +154,14 @@ async def on_message(message):
         return
     if message.content == config.DEBUG_CMD:
         await send_announce()
+        await message.delete()
+    if message.content == config.RESET_CMD:
+        await model.reset_zmdb()
+        await message.delete()
+    if message.content == config.VIEW_CMD:
+        await send_view_to_manage(message.channel)
+        await message.delete()
+        
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)

@@ -21,6 +21,20 @@ async def create_zmdb():
     finally:
         connection.close()
 
+# テーブルの中身をすべてクリア
+async def reset_zmdb():
+    try:
+        with sqlite3.connect(DB_MINING) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                        DELETE
+                        FROM MINING
+            """)
+    except sqlite3.Error as e:
+        print('DB CREATION ERROR: ', e)
+    finally:
+        connection.close()
+
 # ユーザーごとの結果を返却する
 async def get_user_result(userid, roleid):
     result = None
@@ -68,7 +82,7 @@ async def select_total_single_country(roleid):
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT roleid, zirnum
+                SELECT roleid, TOTAL(zirnum)
                 FROM MINING
                 WHERE roleid = ?
             """,

@@ -17,8 +17,14 @@ B_ROLE = int(os.getenv('B_ROLE')) #Brave所属ロールID
 F_ROLE = int(os.getenv('F_ROLE')) #Freedom所属ロールID
 G_ROLE = int(os.getenv('G_ROLE')) #Glory所属ロールID
 P_ROLE = int(os.getenv('P_ROLE')) #Peaceful所属ロールID
+B_EMOJI = os.getenv('B_EMOJI')
+F_EMOJI = os.getenv('F_EMOJI')
+G_EMOJI = os.getenv('G_EMOJI')
+P_EMOJI = os.getenv('P_EMOJI')
 
 DEBUG_CMD = os.getenv('DEBUG_CMD')
+RESET_CMD = os.getenv('RESET_CMD')
+VIEW_CMD = os.getenv('VIEW_CMD')
 ##################
 
 # announce clock
@@ -40,10 +46,10 @@ PEACEFUL_FLAG = discord.File("./assets/Peaceful.jpg", filename="Peaceful.jpg")
 
 # country roles id
 COUNTRIES = [
-    {'id':B_ROLE, 'name':'Brave',    'chid':B_CHAT,    'stmp':':B_:',   'img':BRAVE_FLAG}, # brave
-    {'id':F_ROLE, 'name':'Freedom',  'chid':F_CHAT,    'stmp':':F_:',   'img':FREEDOM_FLAG}, # freedom
-    {'id':G_ROLE, 'name':'Glory',    'chid':G_CHAT,    'stmp':':G_:',   'img':GLORY_FLAG}, # glory
-    {'id':P_ROLE, 'name':'Peaceful', 'chid':P_CHAT,    'stmp':':P_:',   'img':PEACEFUL_FLAG}  # peaceful
+    {'id':B_ROLE, 'name':'Brave',    'chid':B_CHAT,    'stmp':B_EMOJI,   'img':BRAVE_FLAG}, # brave
+    {'id':F_ROLE, 'name':'Freedom',  'chid':F_CHAT,    'stmp':F_EMOJI,   'img':FREEDOM_FLAG}, # freedom
+    {'id':G_ROLE, 'name':'Glory',    'chid':G_CHAT,    'stmp':G_EMOJI,   'img':GLORY_FLAG}, # glory
+    {'id':P_ROLE, 'name':'Peaceful', 'chid':P_CHAT,    'stmp':P_EMOJI,   'img':PEACEFUL_FLAG}  # peaceful
 ]
 
 MSG_LETS_MINING = "今日も元気に採掘しましょう！ :gem:"
