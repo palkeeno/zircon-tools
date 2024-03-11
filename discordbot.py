@@ -152,16 +152,24 @@ async def on_interaction(interaction: discord.Interaction):
 async def on_message(message):
     if message.author.bot:
         return
+    if message.channel != client.get_channel(config.MCH):
+        return
     if message.content == config.DEBUG_CMD:
         await send_announce()
-        await message.delete()
+        await message.reply(content="アナウンスを発動しました")
     if message.content == config.RESET_CMD:
         await model.reset_zmdb()
-        await message.delete()
+        await message.reply(content="データベースをリセットしました")
     if message.content == config.VIEW_CMD:
         await send_view_to_manage(message.channel)
         await message.delete()
         
+    if message.content.startswith(config.ADD_CMD):
+        args = message.content.split() # [1]=mention, [2]=num
+        if len(args) != 3:
+            return
+        await add_zircon(args[1], int(args[2]), message.guild)
+        await message.reply(content=f'{args[1]}に{args[2]}ジルコン付与しました')
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)

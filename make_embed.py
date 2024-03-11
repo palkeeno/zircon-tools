@@ -36,7 +36,7 @@ def stats_role(result, country):
     embed.set_author(name=country['name'])
     embed.set_thumbnail(url=f"attachment://{country['name']}.jpg")
     embed.add_field(
-        name=f"ジルコン採掘合計 :gem: : {result[1]}", 
+        name=f"ジルコン採掘合計 :gem: : {int(result[1])}", 
         value="", 
         inline=False
     )

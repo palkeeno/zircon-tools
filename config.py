@@ -17,6 +17,7 @@ B_ROLE = int(os.getenv('B_ROLE')) #Brave所属ロールID
 F_ROLE = int(os.getenv('F_ROLE')) #Freedom所属ロールID
 G_ROLE = int(os.getenv('G_ROLE')) #Glory所属ロールID
 P_ROLE = int(os.getenv('P_ROLE')) #Peaceful所属ロールID
+MCH = int(os.getenv('MCH'))
 B_EMOJI = os.getenv('B_EMOJI')
 F_EMOJI = os.getenv('F_EMOJI')
 G_EMOJI = os.getenv('G_EMOJI')
