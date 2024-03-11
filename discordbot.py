@@ -130,6 +130,12 @@ async def send_view_to_manage(channel):
 
     await channel.send(view=view)
 
+# zircon_numで指定した数だけ、userに付与
+async def add_zircon(user_mention, zircon_num, m_guild):
+    user_id = int(user_mention.strip('<@!>'))
+    country_role = util.get_country(m_guild.get_member(user_id))
+    await model.insert_mining(user_id, country_role['id'], zircon_num)
+
 # 全イベントの監視
 # ボタン押下の検知->採掘
 @client.event
@@ -162,8 +168,6 @@ async def on_message(message):
         await message.reply(content="データベースをリセットしました")
     if message.content == config.VIEW_CMD:
         await send_view_to_manage(message.channel)
-        await message.delete()
-        
     if message.content.startswith(config.ADD_CMD):
         args = message.content.split() # [1]=mention, [2]=num
         if len(args) != 3:
