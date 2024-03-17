@@ -6,7 +6,8 @@ import discord
 
 #### Load Env ####
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-DB_MINING = os.getenv('DB_NAME')
+DB_MINING = os.getenv('ZMDB_NAME')
+DB_STAT = os.getenv('STDB_NAME')
 
 CHID_MINING = int(os.getenv('CHID_MINING')) # 採掘用ChID
 B_CHAT = int(os.getenv('B_CHAT')) #Brave雑談チャンネルID

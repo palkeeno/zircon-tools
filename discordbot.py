@@ -19,6 +19,7 @@ JST = timezone(timedelta(hours=+9), "JST")
 async def on_ready():
     # db作成
     await model.create_zmdb()
+    await model.create_stdb()
     # 定時アナウンス開始
     check_announce.start()
     print("Ready!")
@@ -129,6 +130,16 @@ async def send_view_to_manage(channel):
     view.add_item(button_total)
 
     await channel.send(view=view)
+
+# ユーザランクを10位まで表示する, args=roleで国ごと、allで全国
+async def get_rank_role(interaction: discord.Interaction, args=""):
+    result = None
+    if args == "role":
+        for country in config.COUNTRIES:
+            result = await model.get_user_rank(country["id"], 10)
+    elif args == "all":
+        result = await model.get_user_rank_overall(10)
+    return result
 
 # zircon_numで指定した数だけ、userに付与
 async def add_zircon(user_mention, zircon_num, m_guild):

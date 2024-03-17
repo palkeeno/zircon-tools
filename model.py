@@ -1,6 +1,8 @@
 import sqlite3
 import datetime
 from config import DB_MINING
+from config import DB_STAT
+from config import COUNTRIES
 
 # 採掘結果のテーブル作成
 async def create_zmdb():
@@ -8,14 +10,50 @@ async def create_zmdb():
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS MINING(
-                           id INTEGER primary key autoincrement,
-                           userid INTEGER,
-                           roleid INTEGER,
-                           zirnum INTEGER,
-                           updated_at TIMESTAMP
-                        )
+                CREATE TABLE IF NOT EXISTS MINING(
+                    id INTEGER primary key autoincrement,
+                    userid INTEGER,
+                    roleid INTEGER,
+                    zirnum INTEGER,
+                    updated_at TIMESTAMP
+                )
             """)
+    except sqlite3.Error as e:
+        print('DB CREATION ERROR: ', e)
+    finally:
+        connection.close()
+
+# 国ごとに採掘統計を保存する結果のテーブル作成
+async def create_stdb():
+    try:
+        with sqlite3.connect(DB_STAT) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS STAT(
+                    country TEXT primary key,
+                    roleid INTEGER,
+                    zirnum INTEGER,
+                    minor_latest INTEGER,
+                    minor_previous INTEGER,
+                    updated_at TIMESTAMP
+                )
+            """)
+            cursor.execute("""
+                SELECT * FROM STAT
+            """)
+            exst_record = cursor.fetchone()
+            if exst_record:
+                return
+            else:
+                # レコードが存在しない場合は初期値をINSERT
+                timestamp = datetime.datetime.now().timestamp()
+                for country in COUNTRIES:
+                    cursor.execute("""
+                        INSERT INTO STAT
+                            (country, roleid, zirnum, minor_latest, minor_previous, updated_at)
+                            VALUES(?, ?, 0, 0, 0, ?)
+                    """,
+                    (country["name"], country["id"], timestamp))
     except sqlite3.Error as e:
         print('DB CREATION ERROR: ', e)
     finally:
@@ -27,8 +65,8 @@ async def reset_zmdb():
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                        DELETE
-                        FROM MINING
+                DELETE
+                FROM MINING
             """)
     except sqlite3.Error as e:
         print('DB CREATION ERROR: ', e)
@@ -54,6 +92,47 @@ async def get_user_result(userid, roleid):
     finally:
         connection.close()
     # [0]=userid, [1]=roleid, [2]=zirnum, [3]=updated timestamp(UNIX)
+    return result
+
+# 指定の国のユーザ採掘ランキングをtop <limit>間で取得する
+async def get_user_rank_by_role(roleid, limit):
+    result = None
+    try:
+        with sqlite3.connect(DB_MINING) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT userid, zirnum
+                FROM MINING
+                WHERE roleid = ?
+                ORDER BY zirnum DESC
+                LIMIT ?
+            """, (roleid, limit))
+            result = cursor.fetchall()
+    except sqlite3.Error as e:
+        print('DB ERROR: ', e)
+    finally:
+        connection.close()
+    # [N][0]=userid, [N][1]=zirnum
+    return result
+
+# 全体のユーザ採掘ランキングをtop <limit>間で取得する
+async def get_user_rank_overall(limit):
+    result = None
+    try:
+        with sqlite3.connect(DB_MINING) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT userid, zirnum
+                FROM MINING
+                ORDER BY zirnum DESC,
+                LIMIT ?
+            """, (limit))
+            result = cursor.fetchall()
+    except sqlite3.Error as e:
+        print('DB ERROR: ', e)
+    finally:
+        connection.close()
+    # [N][0]=userid, [N][1]=zirnum
     return result
 
 # 国ごとの合計をすべて取得

@@ -1,4 +1,5 @@
 import config
+import csv
 
 # ガチャシステム
 def gacha(rval, conf):
@@ -14,3 +15,10 @@ def get_country(user):
             if usr_role.id == role['id']:
                 return role
     return None
+
+def write_csv(filename, header, data):
+    with open(filename, 'w', newline="") as f:
+        writer = csv.writer(f)
+        if header != None:
+            writer.writerow(header)
+        writer.writerows(data)
