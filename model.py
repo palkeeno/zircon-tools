@@ -33,8 +33,7 @@ async def create_stdb():
                     country TEXT primary key,
                     roleid INTEGER,
                     zirnum INTEGER,
-                    minor_latest INTEGER,
-                    minor_previous INTEGER,
+                    minor_num INTEGER,
                     updated_at TIMESTAMP
                 )
             """)
@@ -50,8 +49,8 @@ async def create_stdb():
                 for country in COUNTRIES:
                     cursor.execute("""
                         INSERT INTO STAT
-                            (country, roleid, zirnum, minor_latest, minor_previous, updated_at)
-                            VALUES(?, ?, 0, 0, 0, ?)
+                            (country, roleid, zirnum, minor_num, updated_at)
+                            VALUES(?, ?, 0, 0, ?)
                     """,
                     (country["name"], country["id"], timestamp))
     except sqlite3.Error as e:
@@ -59,7 +58,7 @@ async def create_stdb():
     finally:
         connection.close()
 
-# テーブルの中身をすべてクリア
+# 採掘テーブルの中身をすべてクリア
 async def reset_zmdb():
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -67,6 +66,20 @@ async def reset_zmdb():
             cursor.execute("""
                 DELETE
                 FROM MINING
+            """)
+    except sqlite3.Error as e:
+        print('DB CREATION ERROR: ', e)
+    finally:
+        connection.close()
+
+# 国統計テーブルの中身をすべてクリア
+async def reset_stdb():
+    try:
+        with sqlite3.connect(DB_STAT) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                DELETE
+                FROM STAT
             """)
     except sqlite3.Error as e:
         print('DB CREATION ERROR: ', e)
