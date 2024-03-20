@@ -7,7 +7,7 @@ def mining(country, result, usr):
         description="",
         color=0x00ff00
     )
-    embed.set_author(name=usr.name, icon_url=usr.avatar.url)
+    embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
     embed.add_field(
         name=f"採掘結果 :pick: : {result['msg']}", 
         value=f"{country['name']} {country['stmp']} : + **{result['zirnum']}** ジルコン :gem:", 
@@ -22,7 +22,7 @@ def excellent(usr):
         description="",
         color=0x00ff00
     )
-    embed.set_author(name=usr.name, icon_url=usr.avatar.url)
+    embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
 
     return embed
 
@@ -49,7 +49,7 @@ def stats_self(result, usr):
         description="所属国でのあなたの採掘量は...",
         color=0x0000ff
     )
-    embed.set_author(name=usr.name, icon_url=usr.avatar.url)
+    embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
     embed.add_field(
         name=f"{result[2]} :gem:", 
         value="", 
