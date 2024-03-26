@@ -18,7 +18,7 @@ def mining(country, result, usr):
 # 採掘結果Excellentを雑談チャネルに投稿するときのembed
 def excellent(usr):
     embed = discord.Embed(
-        title="Excellent発掘しました！ :gem::gem::gem:",
+        title="Excellent採掘しました！ :gem::gem::gem:",
         description="",
         color=0x00ff00
     )

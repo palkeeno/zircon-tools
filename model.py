@@ -44,7 +44,7 @@ def init_country_record():
                         VALUES(?, ?, ?, ?, ?, ?)
                 """, (country['id'], country['role'], 0, 0, 0, util.convertDt2Str(datetime.datetime.now(JST))))
     except sqlite3.Error as e:
-        print('DB CREATION ERROR: ', e)
+        print('DB INITIALIZE ERROR: ', e)
     finally:
         connection.close()
 
@@ -58,7 +58,7 @@ async def reset_zmdb():
                 FROM MINING
             """)
     except sqlite3.Error as e:
-        print('DB CREATION ERROR: ', e)
+        print('DB RESET ERROR: ', e)
     finally:
         connection.close()
     # 国ユーザを初期作成
@@ -93,7 +93,7 @@ async def get_user_result(userid, roleid):
             (userid, roleid))
             result = cursor.fetchone()
     except sqlite3.Error as e:
-        print('DB ERROR: ', e)
+        print('DB GET_USER_RESULT ERROR: ', e)
     finally:
         connection.close()
     # [0]=userid, [1]=roleid, [2]=zirnum, [3]=done_flag
@@ -153,7 +153,7 @@ async def select_total_all_country():
             """)
             result = cursor.fetchall()
     except sqlite3.Error as e:
-        print('DB ERROR: ', e)
+        print('DB GET_TOTAL_ALL_COUNTRIES ERROR: ', e)
     finally:
         connection.close()
     # List of result, [0]=roleid, [1]=total of zirnum
@@ -173,7 +173,7 @@ async def select_total_single_country(roleid):
             (roleid,))
             result = cursor.fetchone()
     except sqlite3.Error as e:
-        print('DB ERROR: ', e)
+        print('DB GET_TOTAL_SINGLE_COUTNRY ERROR: ', e)
     finally:
         connection.close()
     # [0]=roleid, [1]=total of zirnum

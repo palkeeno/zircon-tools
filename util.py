@@ -7,7 +7,6 @@ dt_format = '%Y-%m-%d %H:%M:%S'
 
 # ガチャシステム
 def gacha(rval, conf):
-    # print(rval)
     for item in conf:
         if rval < item['prob']:
             return item

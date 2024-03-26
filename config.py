@@ -33,8 +33,8 @@ ADD_CMD = os.getenv('ADD_CMD')
 ANN_HOUR = [0,2,12]
 ANN_MINUTE = [0,51,52,53,54]
 
-# mining result
-RESULTS = [
+# mining probability
+PROBABILITY = [
     {'id':0,    'msg':'Excellent!!',    'prob':0.03,    'zirnum':10},
     {'id':1,    'msg':'Great!',         'prob':0.25,    'zirnum':3},
     {'id':2,    'msg':'Good',           'prob':1,       'zirnum':1}

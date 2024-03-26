@@ -72,7 +72,7 @@ async def mining_zircon(interaction: discord.Interaction):
             await interaction.response.send_message(content=constants.MSG_ONCE_MINING, ephemeral=True)
             return
     # 採掘結果を出す
-    result = util.gacha(random.random(), config.RESULTS)
+    result = util.gacha(random.random(), config.PROBABILITY)
     embed = make_embed.mining(country, result, interaction.user)
     # 採掘結果をDBに保存して、メッセージを送信
     await model.upsert_mining(interaction.user.id, country['role'], result['zirnum'])
@@ -83,6 +83,9 @@ async def mining_zircon(interaction: discord.Interaction):
         channel = client.get_channel(country['chid'])
         await channel.send(embed=exc_embed)
 
+# 採掘量を表示するアクション
+### args = self :現在の所属国での自分の採掘量
+### args = single :現在の所属国の全体採掘量
 async def get_stats(interaction: discord.Interaction, arg:str=""):
     country = util.get_country(interaction.user)
     if await error.check_country(interaction, country):
@@ -135,7 +138,7 @@ async def get_rank_role(interaction: discord.Interaction, args=""):
         result = await model.get_user_rank_overall(10)
     return result
 
-# zircon_numで指定した数だけ、userに付与
+# zircon_numで指定した数だけ、指定したuserに付与
 async def add_zircon(user_mention, zircon_num, m_guild):
     user_id = int(user_mention.strip('<@!>'))
     country = util.get_country(m_guild.get_member(user_id))
@@ -166,14 +169,17 @@ async def on_message(message):
     if message.channel != client.get_channel(config.MCH):
         return
     if message.content == config.DEBUG_CMD:
+        # announce yourself
         await send_announce()
         await message.reply(content="アナウンスを発動しました")
     if message.content == config.RESET_CMD:
+        # reset mining database
         await model.reset_zmdb()
         await message.reply(content="データベースをリセットしました")
     if message.content == config.VIEW_CMD:
         await send_view_to_manage(message.channel)
     if message.content.startswith(config.ADD_CMD):
+        # add zircon to designated user
         args = message.content.split() # [1]=mention, [2]=num
         if len(args) != 3:
             return
