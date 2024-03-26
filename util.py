@@ -21,6 +21,14 @@ def get_country(user):
                 return country
     return None
 
+# roleid から country を特定
+def get_country_by_roleid(roleid):
+    if roleid == None:
+        return None
+    for country in config.COUNTRIES:
+        if roleid == country['role']:
+            return country
+    return None
 def write_csv(filename, header, data):
     with open(filename, 'w', newline="") as f:
         writer = csv.writer(f)

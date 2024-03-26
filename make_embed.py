@@ -86,3 +86,17 @@ def stats_all(result, country):
             )
     return embed
 
+# 国対抗ランキングのembed
+def rank_country(result):
+    embed = discord.Embed(
+        title="国対抗ランキング",
+        description="",
+        color=0xffffff
+    )
+    for rank, res in enumerate(result):
+        embed.add_field(
+            name=f"{rank+1} : {res[0]['stmp']} {res[0]['name']}",
+            value="",
+            inline=False
+        )
+    return embed

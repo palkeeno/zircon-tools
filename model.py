@@ -141,7 +141,7 @@ async def get_user_rank_overall(limit):
     return result
 
 # 国ごとの合計をすべて取得
-async def select_total_all_country():
+async def get_total_all_countries():
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -156,8 +156,12 @@ async def select_total_all_country():
         print('DB GET_TOTAL_ALL_COUNTRIES ERROR: ', e)
     finally:
         connection.close()
-    # List of result, [0]=roleid, [1]=total of zirnum
-    return result
+    # [N][0]=roleid, [N][1]=total of zirnum
+    result_list = [[0]*2 for i in range(len(result))]
+    for index, res in enumerate(result):
+        result_list[index][0] = res[0] # roleid
+        result_list[index][1] = int(res[1]) # zirnum
+    return result_list
 
 # 指定された国の合計を取得
 async def get_total_single_country(roleid):

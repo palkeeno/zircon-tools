@@ -51,10 +51,17 @@ async def send_announce():
         style=discord.ButtonStyle.secondary,
         custom_id="total_single"
     )
+    # 国対抗ランキング表示ボタン
+    button_rank_country = discord.ui.Button(
+        label="国対抗ランキング",
+        style=discord.ButtonStyle.secondary,
+        custom_id="rank_country"
+    )
     view = discord.ui.View()
     view.add_item(button_mine)
     view.add_item(button_sum_self)
     view.add_item(button_total)
+    view.add_item(button_rank_country)
 
     channel = client.get_channel(config.CHID_MINING)
     await channel.send(content=text, view=view)
@@ -106,37 +113,54 @@ async def get_stats(interaction: discord.Interaction, arg:str=""):
         embed = make_embed.stats_role(result, country)
         await interaction.response.send_message(file=country['img'], embed=embed, ephemeral=True)
 
+# 管理ビュー（運営向け）
+async def send_view_to_manage(channel):
+    # 国ごとにユーザの採掘量ランキングを表示（各10位まで）＆ファイル出力（国ごとにすべて）
+    button_rank_role = discord.ui.Button(
+        label="各国ランキング",
+        style=discord.ButtonStyle.primary,
+        custom_id="rank_role"
+    )
+    # 全体のユーザの採掘量ランキングを表示（10位まで）＆ファイル出力（すべて）
+    button_rank_all = discord.ui.Button(
+        label="全体ランキング",
+        style=discord.ButtonStyle.danger,
+        custom_id="rank_all"
+    )
+    view = discord.ui.View()
+    view.add_item(button_rank_role)
+    view.add_item(button_rank_all)
+    await channel.send(view=view)
+
 # 4国すべての採掘状況を表示（運営向け）
-async def get_all(interaction: discord.Interaction):
-    result = await model.select_total_all_country()
+async def get_all_zirnum(interaction: discord.Interaction):
+    result = await model.get_total_all_countries()
     if result == None:
         await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
         return
     embed = make_embed.stats_all(result, config.COUNTRIES)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# 呼び出した人だけが押せるボタン（運営向け）
-async def send_view_to_manage(channel):
-    # 4国すべての採掘量表示ボタン
-    button_total = discord.ui.Button(
-        label="4国状況",
-        style=discord.ButtonStyle.secondary,
-        custom_id="total_all"
-    )
-    view = discord.ui.View()
-    view.add_item(button_total)
-
-    await channel.send(view=view)
-
-# ユーザランクを10位まで表示する, args=roleで国ごと、allで全国
-async def get_rank_role(interaction: discord.Interaction, args=""):
-    result = None
-    if args == "role":
+# 採掘量ランキングを取得する
+### args = user_role:ユーザの国ごとranking
+### args = user_all:ユーザの全体ranking
+### args = country_all:国ごとのranking
+async def get_rank(interaction: discord.Interaction, args=""):
+    result = list()
+    filename = ""
+    now = datetime.now()
+    if args == "user_role":
         for country in config.COUNTRIES:
-            result = await model.get_user_rank(country["id"], 10)
-    elif args == "all":
-        result = await model.get_user_rank_overall(10)
-    return result
+            filename = "./csv/rank_user_"+country["name"]+now.strftime('%Y%m%d%H%M%S')+".csv"
+    elif args == "user_all":
+        filename = "./csv/rank_user_all"+now.strftime('%Y%m%d%H%M%S')+".csv"
+    elif args == "country_all":
+        result = await model.get_total_all_countries()
+        result = sorted(result, key=lambda x: x[1], reverse=True) # zirnum数の降順に並び替え
+        for index, item in enumerate(result):
+            result[index][0] = util.get_country_by_roleid(item[0])
+        embed = make_embed.rank_country(result)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # zircon_numで指定した数だけ、指定したuserに付与
 async def add_zircon(user_mention, zircon_num, m_guild):
@@ -158,7 +182,13 @@ async def on_interaction(interaction: discord.Interaction):
             elif custom_id == "sum_self":
                 await get_stats(interaction, "self")
             elif custom_id == "total_all":
-                await get_all(interaction)
+                await get_all_zirnum(interaction)
+            elif custom_id == "rank_role":
+                await get_rank(interaction, "user_role")
+            elif custom_id == "rank_all":
+                await get_rank(interaction, "user_all")
+            elif custom_id == "rank_country":
+                await get_rank(interaction, "country_all")
     except KeyError:
         pass
 
@@ -176,7 +206,8 @@ async def on_message(message):
         # reset mining database
         await model.reset_zmdb()
         await message.reply(content="データベースをリセットしました")
-    if message.content == config.VIEW_CMD:
+    if message.content == config.MNG_CMD:
+        # view, rank_role, rank_all
         await send_view_to_manage(message.channel)
     if message.content.startswith(config.ADD_CMD):
         # add zircon to designated user
