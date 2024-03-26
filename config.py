@@ -30,8 +30,8 @@ ADD_CMD = os.getenv('ADD_CMD')
 ##################
 
 # announce clock
-ANN_HOUR = [0,2,12]
-ANN_MINUTE = [0,51,52,53,54]
+ANN_HOUR = [0,12]
+ANN_MINUTE = [0]
 
 # mining probability
 PROBABILITY = [
