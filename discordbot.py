@@ -151,8 +151,22 @@ async def get_rank(interaction: discord.Interaction, args=""):
     now = datetime.now()
     if args == "user_role":
         for country in config.COUNTRIES:
+            result = await model.get_user_rank(country['role'])
+            for index, item in enumerate(result):
+                user = await client.get_user(item[0])
+                result[index][0] = user.display_name # [0]=username, [1]=zirnum
+            embed = make_embed.rank_role(result, country['name'])
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             filename = "./csv/rank_user_"+country["name"]+now.strftime('%Y%m%d%H%M%S')+".csv"
     elif args == "user_all":
+        result = await model.get_user_rank_overall()
+        for index, item in enumerate(result):
+            user = await client.get_user(item[0])
+            country_name = [ c for c in config.COUNTRIES if c['name'] == item[2]]
+            result[index][0] = user.display_name
+            result[index][2] = country_name # [0]=username, [1]=zirnum, [2]=countryname
+        embed = make_embed.rank_role(result, "全")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
         filename = "./csv/rank_user_all"+now.strftime('%Y%m%d%H%M%S')+".csv"
     elif args == "country_all":
         result = await model.get_total_all_countries()

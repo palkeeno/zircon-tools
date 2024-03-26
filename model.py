@@ -99,8 +99,8 @@ async def get_user_result(userid, roleid):
     # [0]=userid, [1]=roleid, [2]=zirnum, [3]=done_flag, [4]=m_cnt
     return result
 
-# 指定の国のユーザ採掘ランキングをtop <limit>間で取得する
-async def get_user_rank_by_role(roleid, limit):
+# 指定の国のユーザ採掘ランキングをすべて取得する
+async def get_user_rank_by_role(roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -110,35 +110,44 @@ async def get_user_rank_by_role(roleid, limit):
                 FROM MINING
                 WHERE roleid = ?
                 ORDER BY zirnum DESC
-                LIMIT ?
-            """, (roleid, limit))
+            """, (roleid))
             result = cursor.fetchall()
     except sqlite3.Error as e:
-        print('DB ERROR: ', e)
+        print('DB GET_USER_RANK_BY_ROLE ERROR: ', e)
     finally:
         connection.close()
-    # [N][0]=userid, [N][1]=zirnum
-    return result
+    # [N][0]=userid, [N][1]=zirnum, order by zirunm
+    result_list = [[0]*3 for i in range(len(result))]
+    for index, res in enumerate(result):
+        result_list[index][0] = index + 1 # rank
+        result_list[index][1] = res[0] # userid
+        result_list[index][2] = int(res[1]) # zirnum
+    return result_list
 
-# 全体のユーザ採掘ランキングをtop <limit>間で取得する
-async def get_user_rank_overall(limit):
+# 全体のユーザ採掘ランキングをすべて取得する
+async def get_user_rank_overall():
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT userid, zirnum
+                SELECT userid, zirnum, roleid
                 FROM MINING
-                ORDER BY zirnum DESC,
-                LIMIT ?
-            """, (limit))
+                ORDER BY zirnum DESC
+            """)
             result = cursor.fetchall()
     except sqlite3.Error as e:
-        print('DB ERROR: ', e)
+        print('DB GET_USER_RANK_OVERALL ERROR: ', e)
     finally:
         connection.close()
-    # [N][0]=userid, [N][1]=zirnum
-    return result
+    # [N][0]=userid, [N][1]=zirnum, [N][2]=roleid, order by zirunm
+    result_list = [[0]*4 for i in range(len(result))]
+    for index, res in enumerate(result):
+        result_list[index][0] = index + 1 # rank
+        result_list[index][1] = res[0] # userid
+        result_list[index][2] = int(res[1]) # zirnum
+        result_list[index][3] = res[2] # roleid
+    return result_list
 
 # 国ごとの合計をすべて取得
 async def get_total_all_countries():
