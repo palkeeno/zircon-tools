@@ -57,35 +57,6 @@ def stats_self(result, usr):
     )
     return embed
 
-# 全国の採掘合計embed
-def stats_all(result, country):
-    embed = discord.Embed(
-        title="各国採掘状況 :pick:",
-        description="",
-        color=0x0000ff
-    )
-    for c in country:
-        flg = 0
-        for res in result:
-            if c['role'] == res[0]:
-                zirnum = int(res[1])
-                embed.add_field(
-                    name=f"{c['stmp']} {c['name']} : {zirnum} :gem:", 
-                    value="", 
-                    inline=False
-                )
-                flg = 1
-                break
-
-        # 結果がまだない国は0個で表示
-        if flg == 0:
-            embed.add_field(
-                name=f"{c['stmp']} {c['name']} : 0 :gem:", 
-                value="", 
-                inline=False
-            )
-    return embed
-
 # ユーザーランキングの表示embed
 def rank_role(result, cName):
     embed = discord.Embed(
@@ -106,11 +77,11 @@ def rank_country(result):
     embed = discord.Embed(
         title="国対抗ランキング",
         description="",
-        color=0xffffff
+        color=0x0000ff
     )
     for rank, res in enumerate(result):
         embed.add_field(
-            name=f"{rank+1} : {res[0]['stmp']} {res[0]['name']}",
+            name=f"{rank+1} : {res[0]['stmp']} {res[0]['name']} : {res[1]} :gem:",
             value="",
             inline=False
         )

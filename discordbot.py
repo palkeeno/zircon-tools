@@ -51,17 +51,10 @@ async def send_announce():
         style=discord.ButtonStyle.secondary,
         custom_id="total_single"
     )
-    # 国対抗ランキング表示ボタン
-    button_rank_country = discord.ui.Button(
-        label="国対抗ランキング",
-        style=discord.ButtonStyle.secondary,
-        custom_id="rank_country"
-    )
     view = discord.ui.View()
     view.add_item(button_mine)
     view.add_item(button_sum_self)
     view.add_item(button_total)
-    view.add_item(button_rank_country)
 
     channel = client.get_channel(config.CHID_MINING)
     await channel.send(content=text, view=view)
@@ -116,6 +109,7 @@ async def get_stats(interaction: discord.Interaction, arg:str=""):
 # 管理ビュー（運営向け）
 async def send_view_to_manage(channel):
     # 国ごとにユーザの採掘量ランキングを表示（各10位まで）＆ファイル出力（国ごとにすべて）
+    # TODO: 国別ユーザランキングをボタンを押したユーザの国で判定して出す。運営コマンドじゃなくて個人コマンドにする。CSV出力はいらん
     button_rank_role = discord.ui.Button(
         label="各国ランキング",
         style=discord.ButtonStyle.primary,
@@ -127,19 +121,17 @@ async def send_view_to_manage(channel):
         style=discord.ButtonStyle.danger,
         custom_id="rank_all"
     )
+    # 国対抗ランキング表示ボタン
+    button_rank_country = discord.ui.Button(
+        label="国対抗ランキング",
+        style=discord.ButtonStyle.secondary,
+        custom_id="rank_country"
+    )
     view = discord.ui.View()
     view.add_item(button_rank_role)
     view.add_item(button_rank_all)
+    view.add_item(button_rank_country)
     await channel.send(view=view)
-
-# 4国すべての採掘状況を表示（運営向け）
-async def get_all_zirnum(interaction: discord.Interaction):
-    result = await model.get_total_all_countries()
-    if result == None:
-        await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
-        return
-    embed = make_embed.stats_all(result, config.COUNTRIES)
-    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # 採掘量ランキングを取得する
 ### args = user_role:ユーザの国ごとranking
@@ -195,8 +187,6 @@ async def on_interaction(interaction: discord.Interaction):
                 await get_stats(interaction, "single")
             elif custom_id == "sum_self":
                 await get_stats(interaction, "self")
-            elif custom_id == "total_all":
-                await get_all_zirnum(interaction)
             elif custom_id == "rank_role":
                 await get_rank(interaction, "user_role")
             elif custom_id == "rank_all":
