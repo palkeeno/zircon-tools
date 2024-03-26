@@ -85,7 +85,7 @@ async def get_user_result(userid, roleid):
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT userid, roleid, zirnum, done_flag
+                SELECT userid, roleid, zirnum, done_flag, m_cnt
                 FROM MINING 
                 WHERE userid = ?
                 AND roleid = ?
@@ -96,7 +96,7 @@ async def get_user_result(userid, roleid):
         print('DB GET_USER_RESULT ERROR: ', e)
     finally:
         connection.close()
-    # [0]=userid, [1]=roleid, [2]=zirnum, [3]=done_flag
+    # [0]=userid, [1]=roleid, [2]=zirnum, [3]=done_flag, [4]=m_cnt
     return result
 
 # 指定の国のユーザ採掘ランキングをtop <limit>間で取得する
@@ -160,13 +160,13 @@ async def select_total_all_country():
     return result
 
 # 指定された国の合計を取得
-async def select_total_single_country(roleid):
+async def get_total_single_country(roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT roleid, TOTAL(zirnum)
+                SELECT roleid, TOTAL(zirnum), TOTAL(m_cnt)
                 FROM MINING
                 WHERE roleid = ?
             """,
@@ -176,7 +176,7 @@ async def select_total_single_country(roleid):
         print('DB GET_TOTAL_SINGLE_COUTNRY ERROR: ', e)
     finally:
         connection.close()
-    # [0]=roleid, [1]=total of zirnum
+    # [0]=roleid, [1]=total of zirnum, [2]=total of mining count
     return result
 
 # 採掘結果をUPSERT
