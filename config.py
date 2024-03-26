@@ -7,7 +7,6 @@ import discord
 #### Load Env ####
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 DB_MINING = os.getenv('ZMDB_NAME')
-DB_STAT = os.getenv('STDB_NAME')
 
 CHID_MINING = int(os.getenv('CHID_MINING')) # 採掘用ChID
 B_CHAT = int(os.getenv('B_CHAT')) #Brave雑談チャンネルID
@@ -31,8 +30,8 @@ ADD_CMD = os.getenv('ADD_CMD')
 ##################
 
 # announce clock
-ANN_HOUR = 0
-ANN_MINUTE = 0
+ANN_HOUR = [0,2,12]
+ANN_MINUTE = [0,51,52,53,54]
 
 # mining result
 RESULTS = [
@@ -49,12 +48,8 @@ PEACEFUL_FLAG = discord.File("./assets/Peaceful.jpg", filename="Peaceful.jpg")
 
 # country roles id
 COUNTRIES = [
-    {'id':B_ROLE, 'name':'Brave',    'chid':B_CHAT,    'stmp':B_EMOJI,   'img':BRAVE_FLAG}, # brave
-    {'id':F_ROLE, 'name':'Freedom',  'chid':F_CHAT,    'stmp':F_EMOJI,   'img':FREEDOM_FLAG}, # freedom
-    {'id':G_ROLE, 'name':'Glory',    'chid':G_CHAT,    'stmp':G_EMOJI,   'img':GLORY_FLAG}, # glory
-    {'id':P_ROLE, 'name':'Peaceful', 'chid':P_CHAT,    'stmp':P_EMOJI,   'img':PEACEFUL_FLAG}  # peaceful
+    {'id':1, 'role':B_ROLE, 'name':'Brave',    'chid':B_CHAT,    'stmp':B_EMOJI,   'img':BRAVE_FLAG}, # brave
+    {'id':2, 'role':F_ROLE, 'name':'Freedom',  'chid':F_CHAT,    'stmp':F_EMOJI,   'img':FREEDOM_FLAG}, # freedom
+    {'id':3, 'role':G_ROLE, 'name':'Glory',    'chid':G_CHAT,    'stmp':G_EMOJI,   'img':GLORY_FLAG}, # glory
+    {'id':4, 'role':P_ROLE, 'name':'Peaceful', 'chid':P_CHAT,    'stmp':P_EMOJI,   'img':PEACEFUL_FLAG}  # peaceful
 ]
-
-MSG_LETS_MINING = "今日も元気に採掘しましょう！ :gem:"
-MSG_ONCE_MINING = '今日の採掘は完了しています！また明日来てね！'
-MSG_COUNTRY_ROLE = 'どこか一つの国に所属してからまた来てね！'

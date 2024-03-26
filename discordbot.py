@@ -1,9 +1,10 @@
 import discord
 from discord.ext import tasks
 import random
-from datetime import timezone, timedelta, datetime
+from datetime import datetime
 # made for this prj
 import config
+import constants
 import make_embed
 import model
 import util
@@ -12,14 +13,12 @@ import error
 # init
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
-JST = timezone(timedelta(hours=+9), "JST")
 
 # Bot起動時に呼び出される関数
 @client.event
 async def on_ready():
     # db作成
     await model.create_zmdb()
-    await model.create_stdb()
     # 定時アナウンス開始
     check_announce.start()
     print("Ready!")
@@ -27,27 +26,28 @@ async def on_ready():
 # 毎日0時を検知して採掘アナウンスを発火
 @tasks.loop(seconds=60, reconnect=True)
 async def check_announce():
-    now = datetime.now(JST)
-    if now.hour == config.ANN_HOUR and now.minute == config.ANN_MINUTE:
+    now = datetime.now(constants.JST)
+    if (now.hour in config.ANN_HOUR) and (now.minute in config.ANN_MINUTE):
+        await model.unflag_mining()
         await send_announce()
 
 # 採掘アナウンスを送信
 async def send_announce():
-    text = config.MSG_LETS_MINING
+    text = constants.MSG_LETS_MINING
     # 採掘ボタン
     button_mine = discord.ui.Button(
         label="ジルコン採掘",
         style=discord.ButtonStyle.primary,
         custom_id="mining_zircon")
-    # 自分の採掘量表示ボタン（引数＝self）
+    # 自分の採掘量表示ボタン
     button_sum_self = discord.ui.Button(
-        label="自己採掘量",
+        label="あなたの採掘量",
         style=discord.ButtonStyle.secondary,
         custom_id="sum_self"
     )
-    # 採掘量表示ボタン（引数＝single）
+    # 国内の採掘総量表示ボタン
     button_total = discord.ui.Button(
-        label="自国状況",
+        label="国内合計",
         style=discord.ButtonStyle.secondary,
         custom_id="total_single"
     )
@@ -59,27 +59,23 @@ async def send_announce():
     channel = client.get_channel(config.CHID_MINING)
     await channel.send(content=text, view=view)
 
+# ジルコン採掘アクション
 async def mining_zircon(interaction: discord.Interaction):
     country = util.get_country(interaction.user)
     if await error.check_country(interaction, country):
-        await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
+        await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
         return
-    # DBから採掘済みかチェック
-    ures = await model.get_user_result(interaction.user.id, country['id'])
-    # はじめての人でないか判定
+    # DBのレコードを見て採掘済みかチェック
+    ures = await model.get_user_result(interaction.user.id, country['role'])
     if ures != None:
-        latest_updated = datetime.fromtimestamp(ures[3], JST).date()
-        now = datetime.now(JST).date()
-        if latest_updated == now :
-            # 採掘済みなら、また明日来るように伝えて終了
-            await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
+        if bool(ures[3]) : # ures[3]=done_flag
+            await interaction.response.send_message(content=constants.MSG_ONCE_MINING, ephemeral=True)
             return
     # 採掘結果を出す
     result = util.gacha(random.random(), config.RESULTS)
     embed = make_embed.mining(country, result, interaction.user)
-    # データを保存
-    await model.insert_mining(interaction.user.id, country['id'], result['zirnum'])
-    # メッセージを送信
+    # 採掘結果をDBに保存して、メッセージを送信
+    await model.upsert_mining(interaction.user.id, country['role'], result['zirnum'])
     await interaction.response.send_message(embed=embed, ephemeral=True)
     # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
     if result['id'] == 0:
@@ -90,22 +86,20 @@ async def mining_zircon(interaction: discord.Interaction):
 async def get_stats(interaction: discord.Interaction, arg:str=""):
     country = util.get_country(interaction.user)
     if await error.check_country(interaction, country):
-        await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
+        await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
         return
-    
-    elif arg == "self":
-        # "self"付きなら自分の現在の所属国での採掘量
-        result = await model.get_user_result(interaction.user.id, country['id'])
+    # 引数によってとる内容を出し分け、結果がNoneの場合は無視
+    if arg == "self":
+        result = await model.get_user_result(interaction.user.id, country['role'])
         if result == None:
             await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
             return
         embed = make_embed.stats_self(result, interaction.user)
         await interaction.response.send_message(embed=embed, ephemeral=True)
     elif arg == "single":
-        # 発火者のロールを参照して採掘合計を返す、結果がNoneの場合は無視
-        result = await model.select_total_single_country(country['id'])
+        result = await model.get_total_single_country(country['role'])
         if result == None:
-            result = (country['id'], 0)
+            result = (country['role'], 0)
         embed = make_embed.stats_role(result, country)
         await interaction.response.send_message(file=country['img'], embed=embed, ephemeral=True)
 
@@ -144,8 +138,8 @@ async def get_rank_role(interaction: discord.Interaction, args=""):
 # zircon_numで指定した数だけ、userに付与
 async def add_zircon(user_mention, zircon_num, m_guild):
     user_id = int(user_mention.strip('<@!>'))
-    country_role = util.get_country(m_guild.get_member(user_id))
-    await model.insert_mining(user_id, country_role['id'], zircon_num)
+    country = util.get_country(m_guild.get_member(user_id))
+    await model.upsert_mining(user_id, country['role'], zircon_num)
 
 # 全イベントの監視
 # ボタン押下の検知->採掘

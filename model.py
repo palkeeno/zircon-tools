@@ -1,58 +1,48 @@
 import sqlite3
 import datetime
 from config import DB_MINING
-from config import DB_STAT
 from config import COUNTRIES
+from constants import JST
+import util
 
 # 採掘結果のテーブル作成
+### zirnum = number of mined zircon
+### m_cnt = total count of mining as this user
+### done_flag = the flag of wheather this user have done mining or not, 0:Flase, 1:True
 async def create_zmdb():
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
+            # done_flag = 0:False, 1:True
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS MINING(
                     id INTEGER primary key autoincrement,
                     userid INTEGER,
                     roleid INTEGER,
                     zirnum INTEGER,
-                    updated_at TIMESTAMP
+                    m_cnt INTEGER,
+                    done_flag INTEGER,
+                    updated_at TEXT
                 )
             """)
     except sqlite3.Error as e:
         print('DB CREATION ERROR: ', e)
     finally:
         connection.close()
+    # 国ユーザを初期作成
+    init_country_record()
 
-# 国ごとに採掘統計を保存する結果のテーブル作成
-async def create_stdb():
+# 国ユーザを初期で作成する
+def init_country_record():
     try:
-        with sqlite3.connect(DB_STAT) as connection:
+        with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS STAT(
-                    country TEXT primary key,
-                    roleid INTEGER,
-                    zirnum INTEGER,
-                    minor_num INTEGER,
-                    updated_at TIMESTAMP
-                )
-            """)
-            cursor.execute("""
-                SELECT * FROM STAT
-            """)
-            exst_record = cursor.fetchone()
-            if exst_record:
-                return
-            else:
-                # レコードが存在しない場合は初期値をINSERT
-                timestamp = datetime.datetime.now().timestamp()
-                for country in COUNTRIES:
-                    cursor.execute("""
-                        INSERT INTO STAT
-                            (country, roleid, zirnum, minor_num, updated_at)
-                            VALUES(?, ?, 0, 0, ?)
-                    """,
-                    (country["name"], country["id"], timestamp))
+            for country in COUNTRIES:
+                cursor.execute("""
+                    INSERT INTO MINING
+                        (userid, roleid, zirnum, m_cnt, done_flag, updated_at)
+                        VALUES(?, ?, ?, ?, ?, ?)
+                """, (country['id'], country['role'], 0, 0, 0, util.convertDt2Str(datetime.datetime.now(JST))))
     except sqlite3.Error as e:
         print('DB CREATION ERROR: ', e)
     finally:
@@ -71,18 +61,20 @@ async def reset_zmdb():
         print('DB CREATION ERROR: ', e)
     finally:
         connection.close()
+    # 国ユーザを初期作成
+    init_country_record()
 
-# 国統計テーブルの中身をすべてクリア
-async def reset_stdb():
+# 採掘テーブルの"done_flag"を下げる
+async def unflag_mining():
     try:
-        with sqlite3.connect(DB_STAT) as connection:
+        with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                DELETE
-                FROM STAT
+                UPDATE MINING
+                SET done_flag = 0
             """)
     except sqlite3.Error as e:
-        print('DB CREATION ERROR: ', e)
+        print('DB UNFLAG ERROR: ', e)
     finally:
         connection.close()
 
@@ -93,7 +85,7 @@ async def get_user_result(userid, roleid):
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT userid, roleid, zirnum, updated_at
+                SELECT userid, roleid, zirnum, done_flag
                 FROM MINING 
                 WHERE userid = ?
                 AND roleid = ?
@@ -104,7 +96,7 @@ async def get_user_result(userid, roleid):
         print('DB ERROR: ', e)
     finally:
         connection.close()
-    # [0]=userid, [1]=roleid, [2]=zirnum, [3]=updated timestamp(UNIX)
+    # [0]=userid, [1]=roleid, [2]=zirnum, [3]=done_flag
     return result
 
 # 指定の国のユーザ採掘ランキングをtop <limit>間で取得する
@@ -188,8 +180,9 @@ async def select_total_single_country(roleid):
     return result
 
 # 採掘結果をUPSERT
-async def insert_mining(userid, roleid, zirnum):
-    timestamp = datetime.datetime.now().timestamp()
+async def upsert_mining(userid, roleid, zirnum):
+    dt = util.convertDt2Str(datetime.datetime.now(JST))
+    # print(dt)
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
@@ -197,30 +190,31 @@ async def insert_mining(userid, roleid, zirnum):
                 SELECT * FROM MINING WHERE userid = ? AND roleid = ?
             """, (userid, roleid))
             exst_record = cursor.fetchone()
-
             print(exst_record, zirnum)
             if exst_record:
-                # レコードが存在する場合はzirnumをUPDATE
+                # レコードが存在する場合はzirnum, m_cntをUPDATE
                 updated_zirnum = exst_record[3] + zirnum
-                print(updated_zirnum)
+                updated_cnt = exst_record[4] + 1
                 cursor.execute("""
                 UPDATE MINING SET
                     zirnum = ?,
+                    m_cnt = ?,
+                    done_flag = 1,
                     updated_at = ?
                 WHERE
                     userid = ?
                     AND roleid = ?
                 """,
-                (updated_zirnum, timestamp, userid, roleid))
+                (updated_zirnum, updated_cnt, dt, userid, roleid))
             else:
                 # レコードが存在しない場合はINSERT
                 cursor.execute("""
                     INSERT INTO MINING
-                        (userid, roleid, zirnum, updated_at)
-                        VALUES(?, ?, ?, ?)
+                        (userid, roleid, zirnum, m_cnt, done_flag, updated_at)
+                        VALUES(?, ?, ?, 1, 1, ?)
                 """,
-                (userid, roleid, zirnum, timestamp))
+                (userid, roleid, zirnum, dt))
     except sqlite3.Error as e:
-        print('DB ERROR: ', e)
+        print('DB UPSERT ERROR: ', e)
     finally:
         connection.close()

@@ -67,7 +67,7 @@ def stats_all(result, country):
     for c in country:
         flg = 0
         for res in result:
-            if c['id'] == res[0]:
+            if c['role'] == res[0]:
                 zirnum = int(res[1])
                 embed.add_field(
                     name=f"{c['stmp']} {c['name']} : {zirnum} :gem:", 
