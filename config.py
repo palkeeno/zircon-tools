@@ -27,6 +27,7 @@ DEBUG_CMD = os.getenv('DEBUG_CMD')
 RESET_CMD = os.getenv('RESET_CMD')
 VIEW_CMD = os.getenv('VIEW_CMD')
 ADD_CMD = os.getenv('ADD_CMD')
+MSG_CMD = os.getenv('MSG_CMD')
 ##################
 
 # announce clock

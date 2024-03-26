@@ -185,6 +185,13 @@ async def on_message(message):
             return
         await add_zircon(args[1], int(args[2]), message.guild)
         await message.reply(content=f'{args[1]}に{args[2]}ジルコン付与しました')
+    if message.content.startswith(config.MSG_CMD):
+        # send Management Message to Mining channel as bot
+        args = message.content.split() # [1]=message
+        if len(args) != 2:
+            return
+        ch_msg = client.get_channel(config.CHID_MINING)
+        await ch_msg.send(content=args[1])
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)
