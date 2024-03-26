@@ -116,6 +116,7 @@ async def send_view_to_manage(channel):
         custom_id="rank_role"
     )
     # 全体のユーザの採掘量ランキングを表示（10位まで）＆ファイル出力（すべて）
+    # TODO: 全体ユーザランキングをファイルに出力する。運営コマンドに実装。embedは不要。
     button_rank_all = discord.ui.Button(
         label="全体ランキング",
         style=discord.ButtonStyle.danger,
@@ -169,6 +170,7 @@ async def get_rank(interaction: discord.Interaction, args=""):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # zircon_numで指定した数だけ、指定したuserに付与
+# TODO: 国ユーザへのジルコン付与機能。user_mentionで国名指定して付与できるようにする。処理の最初に国名フィルター掛ける
 async def add_zircon(user_mention, zircon_num, m_guild):
     user_id = int(user_mention.strip('<@!>'))
     country = util.get_country(m_guild.get_member(user_id))
