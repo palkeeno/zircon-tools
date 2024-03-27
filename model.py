@@ -21,6 +21,7 @@ async def create_zmdb():
                     roleid INTEGER,
                     zirnum INTEGER,
                     m_cnt INTEGER,
+                    ex_cnt INTEGER,
                     done_flag INTEGER,
                     updated_at TEXT
                 )
@@ -40,9 +41,9 @@ def init_country_record():
             for country in COUNTRIES:
                 cursor.execute("""
                     INSERT INTO MINING
-                        (userid, roleid, zirnum, m_cnt, done_flag, updated_at)
-                        VALUES(?, ?, ?, ?, ?, ?)
-                """, (country['id'], country['role'], 0, 0, 0, util.convertDt2Str(datetime.datetime.now(JST))))
+                        (userid, roleid, zirnum, m_cnt, ex_cnt, done_flag, updated_at)
+                        VALUES(?, ?, 0, 0, 0, 0, ?)
+                """, (country['id'], country['role'], util.convertDt2Str(datetime.datetime.now(JST))))
     except sqlite3.Error as e:
         print('DB INITIALIZE ERROR: ', e)
     finally:
@@ -85,7 +86,7 @@ async def get_user_result(userid, roleid):
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT userid, roleid, zirnum, done_flag, m_cnt
+                SELECT userid, roleid, zirnum, done_flag, m_cnt, ex_cnt
                 FROM MINING 
                 WHERE userid = ?
                 AND roleid = ?
@@ -96,7 +97,7 @@ async def get_user_result(userid, roleid):
         print('DB GET_USER_RESULT ERROR: ', e)
     finally:
         connection.close()
-    # [0]=userid, [1]=roleid, [2]=zirnum, [3]=done_flag, [4]=m_cnt
+    # [0]=userid, [1]=roleid, [2]=zirnum, [3]=done_flag, [4]=m_cnt, [5]=ex_cnt
     return result
 
 # 指定の国のユーザ採掘ランキングをすべて取得する
@@ -156,7 +157,7 @@ async def get_total_all_countries():
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT roleid, TOTAL(zirnum)
+                SELECT roleid, TOTAL(zirnum), TOTAL(m_cnt)
                 FROM MINING 
                 GROUP BY roleid
             """)
@@ -165,11 +166,12 @@ async def get_total_all_countries():
         print('DB GET_TOTAL_ALL_COUNTRIES ERROR: ', e)
     finally:
         connection.close()
-    # [N][0]=roleid, [N][1]=total of zirnum
-    result_list = [[0]*2 for i in range(len(result))]
+    # [N][0]=roleid, [N][1]=total of zirnum, [N][2]=total of mining count
+    result_list = [[0]*3 for i in range(len(result))]
     for index, res in enumerate(result):
         result_list[index][0] = res[0] # roleid
         result_list[index][1] = int(res[1]) # zirnum
+        result_list[index][2] = int(res[2]) # mining count
     return result_list
 
 # 指定された国の合計を取得
@@ -193,7 +195,7 @@ async def get_total_single_country(roleid):
     return result
 
 # 採掘結果をUPSERT
-async def upsert_mining(userid, roleid, zirnum):
+async def upsert_mining(userid, roleid, zirnum, isExcellent):
     dt = util.convertDt2Str(datetime.datetime.now(JST))
     # print(dt)
     try:
@@ -208,25 +210,27 @@ async def upsert_mining(userid, roleid, zirnum):
                 # レコードが存在する場合はzirnum, m_cntをUPDATE
                 updated_zirnum = exst_record[3] + zirnum
                 updated_cnt = exst_record[4] + 1
+                updated_ex = exst_record[5] + isExcellent
                 cursor.execute("""
                 UPDATE MINING SET
                     zirnum = ?,
                     m_cnt = ?,
+                    ex_cnt = ?,
                     done_flag = 1,
                     updated_at = ?
                 WHERE
                     userid = ?
                     AND roleid = ?
                 """,
-                (updated_zirnum, updated_cnt, dt, userid, roleid))
+                (updated_zirnum, updated_cnt, updated_ex, dt, userid, roleid))
             else:
                 # レコードが存在しない場合はINSERT
                 cursor.execute("""
                     INSERT INTO MINING
-                        (userid, roleid, zirnum, m_cnt, done_flag, updated_at)
-                        VALUES(?, ?, ?, 1, 1, ?)
+                        (userid, roleid, zirnum, m_cnt, ex_cnt, done_flag, updated_at)
+                        VALUES(?, ?, ?, 1, ?, 1, ?)
                 """,
-                (userid, roleid, zirnum, dt))
+                (userid, roleid, zirnum, isExcellent, dt))
     except sqlite3.Error as e:
         print('DB UPSERT ERROR: ', e)
     finally:

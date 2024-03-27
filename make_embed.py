@@ -29,31 +29,35 @@ def excellent(usr):
 # 1国分の採掘合計embed
 def stats_role(result, country):
     embed = discord.Embed(
-        title=f"{int(result[1])} :gem:",
+        title=f"{country['name']}国",
         description="",
         color=0x0000ff
     )
-    embed.set_author(name=f"{country['name']}国の総採掘量")
     embed.set_thumbnail(url=f"attachment://{country['name']}.jpg")
     embed.add_field(
-        name="", 
-        value=f"総採掘回数 : {int(result[2])}", 
-        inline=False
+        name="総採掘ジルコン :gem:", value=f"{int(result[1])}", inline=True
+    )
+    embed.add_field(
+        name="参加回数 :pick:", value=f"{int(result[2])}", inline=True
     )
     return embed
 
 # 自分の採掘合計embed
 def stats_self(result, usr):
     embed = discord.Embed(
-        title=f"{result[2]} :gem:",
+        title="",
         description="",
         color=0x0000ff
     )
-    embed.set_author(name=f"{usr.display_name} の採掘量", icon_url=usr.display_avatar.url)
+    embed.set_author(name=f"{usr.display_name}", icon_url=usr.display_avatar.url)
     embed.add_field(
-        name="", 
-        value=f"採掘回数 : {result[4]}", 
-        inline=False
+        name="採掘量 :gem:", value=f"{int(result[2])}", inline=True
+    )
+    embed.add_field(
+        name="採掘回数 :pick:", value=f"{int(result[4])}", inline=True
+    )
+    embed.add_field(
+        name="Excellent回数 :tada:", value=f"{int(result[5])}", inline=True
     )
     return embed
 
