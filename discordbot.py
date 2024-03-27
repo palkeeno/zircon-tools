@@ -116,13 +116,6 @@ async def send_view_to_manage(channel):
         style=discord.ButtonStyle.primary,
         custom_id="rank_role"
     )
-    # 全体のユーザの採掘量ランキングを表示（10位まで）＆ファイル出力（すべて）
-    # TODO: 全体ユーザランキングをファイルに出力する。運営コマンドに実装。embedは不要。
-    button_rank_all = discord.ui.Button(
-        label="全体ランキング",
-        style=discord.ButtonStyle.danger,
-        custom_id="rank_all"
-    )
     # 国対抗ランキング表示ボタン
     button_rank_country = discord.ui.Button(
         label="国対抗ランキング",
@@ -137,14 +130,12 @@ async def send_view_to_manage(channel):
     )
     view = discord.ui.View()
     view.add_item(button_rank_role)
-    view.add_item(button_rank_all)
     view.add_item(button_rank_country)
     view.add_item(button_rank_csv)
     await channel.send(view=view)
 
 # 採掘量ランキングを取得する
 ### args = user_role:ユーザの国ごとranking
-### args = user_all:ユーザの全体ranking
 ### args = country_all:国ごとのranking
 async def get_rank(interaction: discord.Interaction, args=""):
     result = list()
@@ -158,15 +149,6 @@ async def get_rank(interaction: discord.Interaction, args=""):
                 result[index][0] = user.display_name # [0]=username, [1]=zirnum
             embed = make_embed.rank_role(result, country['name'])
             await interaction.response.send_message(embed=embed, ephemeral=True)
-    elif args == "user_all":
-        result = await model.get_user_rank_overall()
-        for index, item in enumerate(result):
-            user = await client.get_user(item[0])
-            country_name = [ c for c in config.COUNTRIES if c['name'] == item[2]]
-            result[index][0] = user.display_name
-            result[index][2] = country_name # [0]=username, [1]=zirnum, [2]=countryname
-        embed = make_embed.rank_role(result, "全")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
     elif args == "country_all":
         result = await model.get_total_all_countries()
         result = sorted(result, key=lambda x: x[1], reverse=True) # zirnum数の降順に並び替え
@@ -210,8 +192,6 @@ async def on_interaction(interaction: discord.Interaction):
                 await get_stats(interaction, "self")
             elif custom_id == "rank_role":
                 await get_rank(interaction, "user_role")
-            elif custom_id == "rank_all":
-                await get_rank(interaction, "user_all")
             elif custom_id == "rank_country":
                 await get_rank(interaction, "country_all")
             elif custom_id == "rank_csv":
