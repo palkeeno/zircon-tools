@@ -134,8 +134,9 @@ async def get_user_rank_overall():
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT userid, zirnum, roleid
+                SELECT userid, zirnum, roleid, m_cnt, ex_cnt
                 FROM MINING
+                WHERE userid not in (1,2,3,4)
                 ORDER BY zirnum DESC
             """)
             result = cursor.fetchall()
@@ -143,13 +144,16 @@ async def get_user_rank_overall():
         print('DB GET_USER_RANK_OVERALL ERROR: ', e)
     finally:
         connection.close()
-    # [N][0]=userid, [N][1]=zirnum, [N][2]=roleid, order by zirunm
-    result_list = [[0]*4 for i in range(len(result))]
+    # [N][0]=userid, [N][1]=zirnum, [N][2]=roleid, [N][3]=m_cnt, [N][4]=ex_cnt order by zirunm
+    result_list = [[0]*6 for i in range(len(result))]
     for index, res in enumerate(result):
-        result_list[index][0] = index + 1 # rank
+        print(res[0])
+        result_list[index][0] = int(index + 1) # rank
         result_list[index][1] = res[0] # userid
         result_list[index][2] = int(res[1]) # zirnum
         result_list[index][3] = res[2] # roleid
+        result_list[index][4] = int(res[3]) # mining count
+        result_list[index][5] = int(res[4]) # excellent count
     return result_list
 
 # 国ごとの合計をすべて取得

@@ -26,14 +26,15 @@ def get_country_by_roleid(roleid):
         if roleid == country['role']:
             return country
     return None
+
+# csvで書き出し
 def write_csv(filename, header, data):
-    with open(filename, 'w', newline="") as f:
+    with open(filename, 'w', newline='', encoding='utf8') as f:
         writer = csv.writer(f)
         if header != None:
             writer.writerow(header)
-        writer.writerows(data)# datetime型からString型に変換
-def convertDt2Str(dt:datetime):
-    return dt.strftime(dt_format)
+        writer.writerows(data)
+
 # datetime型からString型に変換
 def convertDt2Str(dt:datetime, format):
     return dt.strftime(format)

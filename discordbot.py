@@ -129,10 +129,17 @@ async def send_view_to_manage(channel):
         style=discord.ButtonStyle.secondary,
         custom_id="rank_country"
     )
+    # 全ユーザランキングCSV出力ボタン
+    button_rank_csv = discord.ui.Button(
+        label="ランキングCSV出力",
+        style=discord.ButtonStyle.secondary,
+        custom_id="rank_csv"
+    )
     view = discord.ui.View()
     view.add_item(button_rank_role)
     view.add_item(button_rank_all)
     view.add_item(button_rank_country)
+    view.add_item(button_rank_csv)
     await channel.send(view=view)
 
 # 採掘量ランキングを取得する
@@ -151,7 +158,6 @@ async def get_rank(interaction: discord.Interaction, args=""):
                 result[index][0] = user.display_name # [0]=username, [1]=zirnum
             embed = make_embed.rank_role(result, country['name'])
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            filename = "./csv/rank_user_"+country["name"]+now.strftime('%Y%m%d%H%M%S')+".csv"
     elif args == "user_all":
         result = await model.get_user_rank_overall()
         for index, item in enumerate(result):
@@ -161,7 +167,6 @@ async def get_rank(interaction: discord.Interaction, args=""):
             result[index][2] = country_name # [0]=username, [1]=zirnum, [2]=countryname
         embed = make_embed.rank_role(result, "全")
         await interaction.response.send_message(embed=embed, ephemeral=True)
-        filename = "./csv/rank_user_all"+now.strftime('%Y%m%d%H%M%S')+".csv"
     elif args == "country_all":
         result = await model.get_total_all_countries()
         result = sorted(result, key=lambda x: x[1], reverse=True) # zirnum数の降順に並び替え
@@ -169,6 +174,19 @@ async def get_rank(interaction: discord.Interaction, args=""):
             result[index][0] = util.get_country_by_roleid(item[0])
         embed = make_embed.rank_country(result)
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# 全ユーザのランキングをcsv出力する（運営コマンド）
+async def output_rank_csv(interaction: discord.Interaction):
+    dtStr = util.convertDt2Str(datetime.now(constants.JST), constants.SHORT_DT_FORMAT)
+    filename = "user-rank_"+dtStr+".csv"
+    data =  await model.get_user_rank_overall()
+    for index, item in enumerate(data):
+            user = interaction.guild.get_member(item[1])
+            data[index][1] = user.display_name
+            country = [ c for c in config.COUNTRIES if c['role'] == item[3]]
+            data[index][3] = country[0]['name']
+    util.write_csv(filename, constants.RANK_HEADER, data)
+    await interaction.response.send_message(file=discord.File(filename))
 
 # zircon_numで指定した数だけ、指定したuserに付与
 # TODO: 国ユーザへのジルコン付与機能。user_mentionで国名指定して付与できるようにする。処理の最初に国名フィルター掛ける
@@ -196,6 +214,8 @@ async def on_interaction(interaction: discord.Interaction):
                 await get_rank(interaction, "user_all")
             elif custom_id == "rank_country":
                 await get_rank(interaction, "country_all")
+            elif custom_id == "rank_csv":
+                await output_rank_csv(interaction)
     except KeyError:
         pass
 
