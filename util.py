@@ -2,9 +2,6 @@ import config
 import csv
 import datetime
 
-# datetime <-> String の変換フォーマット
-dt_format = '%Y-%m-%d %H:%M:%S'
-
 # ガチャシステム
 def gacha(rval, conf):
     for item in conf:
@@ -37,7 +34,10 @@ def write_csv(filename, header, data):
         writer.writerows(data)# datetime型からString型に変換
 def convertDt2Str(dt:datetime):
     return dt.strftime(dt_format)
+# datetime型からString型に変換
+def convertDt2Str(dt:datetime, format):
+    return dt.strftime(format)
 
 # String型からdatetime型に変換
-def convertStr2Dt(dt:str):
-    return datetime.datetime.strptime(dt, dt_format)
+def convertStr2Dt(dt:str, format):
+    return datetime.datetime.strptime(dt, format)

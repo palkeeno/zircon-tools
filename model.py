@@ -3,6 +3,7 @@ import datetime
 from config import DB_MINING
 from config import COUNTRIES
 from constants import JST
+from constants import LONG_DT_FORMAT
 import util
 
 # 採掘結果のテーブル作成
@@ -39,11 +40,12 @@ def init_country_record():
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             for country in COUNTRIES:
+                now = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
                 cursor.execute("""
                     INSERT INTO MINING
                         (userid, roleid, zirnum, m_cnt, ex_cnt, done_flag, updated_at)
                         VALUES(?, ?, 0, 0, 0, 0, ?)
-                """, (country['id'], country['role'], util.convertDt2Str(datetime.datetime.now(JST))))
+                """, (country['id'], country['role'], now))
     except sqlite3.Error as e:
         print('DB INITIALIZE ERROR: ', e)
     finally:
@@ -196,7 +198,7 @@ async def get_total_single_country(roleid):
 
 # 採掘結果をUPSERT
 async def upsert_mining(userid, roleid, zirnum, isExcellent):
-    dt = util.convertDt2Str(datetime.datetime.now(JST))
+    dt = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
     # print(dt)
     try:
         with sqlite3.connect(DB_MINING) as connection:
