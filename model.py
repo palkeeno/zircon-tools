@@ -147,7 +147,6 @@ async def get_user_rank_overall():
     # [N][0]=userid, [N][1]=zirnum, [N][2]=roleid, [N][3]=m_cnt, [N][4]=ex_cnt order by zirunm
     result_list = [[0]*7 for i in range(len(result))]
     for index, res in enumerate(result):
-        print(res[0])
         result_list[index][0] = int(index + 1) # rank
         result_list[index][1] = res[0] # userid
         result_list[index][2] = int(res[1]) # zirnum
@@ -204,7 +203,6 @@ async def get_total_single_country(roleid):
 # 採掘結果をUPSERT
 async def upsert_mining(userid, roleid, zirnum, isExcellent):
     dt = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
-    # print(dt)
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
@@ -212,7 +210,7 @@ async def upsert_mining(userid, roleid, zirnum, isExcellent):
                 SELECT * FROM MINING WHERE userid = ? AND roleid = ?
             """, (userid, roleid))
             exst_record = cursor.fetchone()
-            print(exst_record, zirnum)
+            # print(exst_record, zirnum)
             if exst_record:
                 # レコードが存在する場合はzirnum, m_cntをUPDATE
                 updated_zirnum = exst_record[3] + zirnum
