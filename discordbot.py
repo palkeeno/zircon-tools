@@ -51,10 +51,18 @@ async def send_announce():
         style=discord.ButtonStyle.secondary,
         custom_id="total_single"
     )
+    # 国ごとにユーザの採掘量ランキングを表示（各10位まで＋自分の順位）
+    # TODO: 国別ユーザランキングをボタンを押したユーザの国で判定して出す。
+    button_rank_role = discord.ui.Button(
+        label="国内ランキング",
+        style=discord.ButtonStyle.success,
+        custom_id="rank_user"
+    )
     view = discord.ui.View()
     view.add_item(button_mine)
     view.add_item(button_sum_self)
     view.add_item(button_total)
+    view.add_item(button_rank_role)
 
     channel = client.get_channel(config.CHID_MINING)
     await channel.send(content=text, view=view)
@@ -109,16 +117,9 @@ async def get_stats(interaction: discord.Interaction, arg:str=""):
 
 # 管理ビュー（運営向け）
 async def send_view_to_manage(channel):
-    # 国ごとにユーザの採掘量ランキングを表示（各10位まで）＆ファイル出力（国ごとにすべて）
-    # TODO: 国別ユーザランキングをボタンを押したユーザの国で判定して出す。運営コマンドじゃなくて個人コマンドにする。CSV出力はいらん
-    button_rank_role = discord.ui.Button(
-        label="各国ランキング",
-        style=discord.ButtonStyle.primary,
-        custom_id="rank_role"
-    )
     # 国対抗ランキング表示ボタン
     button_rank_country = discord.ui.Button(
-        label="国対抗ランキング",
+        label="国対抗ランキング表示",
         style=discord.ButtonStyle.secondary,
         custom_id="rank_country"
     )
@@ -129,26 +130,23 @@ async def send_view_to_manage(channel):
         custom_id="rank_csv"
     )
     view = discord.ui.View()
-    view.add_item(button_rank_role)
     view.add_item(button_rank_country)
     view.add_item(button_rank_csv)
     await channel.send(view=view)
 
 # 採掘量ランキングを取得する
-### args = user_role:ユーザの国ごとranking
-### args = country_all:国ごとのranking
+### args = user_role:ユーザの国ごとranking(ユーザコマンド)
+### args = country_all:国ごとのranking(運営コマンド)
 async def get_rank(interaction: discord.Interaction, args=""):
-    result = list()
-    filename = ""
     now = datetime.now()
     if args == "user_role":
-        for country in config.COUNTRIES:
-            result = await model.get_user_rank(country['role'])
-            for index, item in enumerate(result):
-                user = await client.get_user(item[0])
-                result[index][0] = user.display_name # [0]=username, [1]=zirnum
-            embed = make_embed.rank_role(result, country['name'])
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+        country = util.get_country(interaction.user)
+        result = await model.get_user_rank_role(country['role'])
+        res_self = [r for r in result if r[1] == interaction.user.id]
+        for index, item in enumerate(result):
+            result[index][1] = interaction.user.mention # [0]=rank, [1]=user_mention, [2]=zirnum
+        embed = make_embed.rank_role(result, res_self[0], country['name'], interaction.user)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
     elif args == "country_all":
         result = await model.get_total_all_countries()
         result = sorted(result, key=lambda x: x[1], reverse=True) # zirnum数の降順に並び替え
@@ -191,7 +189,7 @@ async def on_interaction(interaction: discord.Interaction):
                 await get_stats(interaction, "single")
             elif custom_id == "sum_self":
                 await get_stats(interaction, "self")
-            elif custom_id == "rank_role":
+            elif custom_id == "rank_user":
                 await get_rank(interaction, "user_role")
             elif custom_id == "rank_country":
                 await get_rank(interaction, "country_all")

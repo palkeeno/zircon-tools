@@ -62,19 +62,21 @@ def stats_self(result, usr):
     return embed
 
 # ユーザーランキングの表示embed
-def rank_role(result, cName):
+def rank_role(result, res_self, cName, usr):
     embed = discord.Embed(
-        title=f"{cName}国 Ranking",
-        description="",
+        title=f"{cName}国内 ランキングTOP10",
+        description=f"Your Rank: {res_self[0]} th",
         color=0x00ffff
     )
-    # result[[user_name1, zirnum1,...], [user_name2, zirnum2,...],...]
-    for index, item in enumerate(result):
+    embed.set_author(name=f"{usr.display_name}", icon_url=usr.display_avatar.url)
+    # result[[user_mention1, zirnum1,...], [user_mention2, zirnum2,...],...]
+    for index in range(min(10, len(result))):
         embed.add_field(
             name="",
-            value=f"**{index}.** {item[0]} • :gem: {item[1]}",
+            value=f"**`{result[index][0]}.`** {result[index][1]} • :gem: {result[index][2]}",
             inline=False
         )
+    return embed
 
 # 国対抗ランキングのembed
 def rank_country(result):

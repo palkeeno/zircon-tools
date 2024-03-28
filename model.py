@@ -103,7 +103,7 @@ async def get_user_result(userid, roleid):
     return result
 
 # 指定の国のユーザ採掘ランキングをすべて取得する
-async def get_user_rank_by_role(roleid):
+async def get_user_rank_role(roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -113,7 +113,7 @@ async def get_user_rank_by_role(roleid):
                 FROM MINING
                 WHERE roleid = ? AND userid not in (1,2,3,4)
                 ORDER BY zirnum DESC
-            """, (roleid))
+            """, (roleid, ))
             result = cursor.fetchall()
     except sqlite3.Error as e:
         print('DB GET_USER_RANK_BY_ROLE ERROR: ', e)
@@ -122,7 +122,7 @@ async def get_user_rank_by_role(roleid):
     # [N][0]=userid, [N][1]=zirnum, order by zirunm
     result_list = [[0]*3 for i in range(len(result))]
     for index, res in enumerate(result):
-        result_list[index][0] = index + 1 # rank
+        result_list[index][0] = int(index + 1) # rank
         result_list[index][1] = res[0] # userid
         result_list[index][2] = int(res[1]) # zirnum
     return result_list
