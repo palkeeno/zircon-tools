@@ -11,6 +11,7 @@ import util
 ### m_cnt = total count of mining as this user
 ### done_flag = the flag of wheather this user have done mining or not, 0:Flase, 1:True
 async def create_zmdb():
+    isNew = False
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
@@ -27,12 +28,18 @@ async def create_zmdb():
                     updated_at TEXT
                 )
             """)
+            cursor.execute("""
+                SELECT * FROM MINING WHERE userid = 1
+            """)
+            isNew = (cursor.fetchone() == None)
     except sqlite3.Error as e:
         print('DB CREATION ERROR: ', e)
     finally:
         connection.close()
-    # 国ユーザを初期作成
-    init_country_record()
+    
+    # データベースを初期起動する場合、国ユーザを初期作成
+    if isNew:
+        init_country_record()
 
 # 国ユーザを初期で作成する
 def init_country_record():
@@ -236,6 +243,32 @@ async def upsert_mining(userid, roleid, zirnum, isExcellent):
                         VALUES(?, ?, ?, 1, ?, 1, ?)
                 """,
                 (userid, roleid, zirnum, isExcellent, dt))
+    except sqlite3.Error as e:
+        print('DB UPSERT ERROR: ', e)
+    finally:
+        connection.close()
+
+# 採掘とは別にジルコンを追加
+async def add_zirnum(userid, roleid, zirnum):
+    dt = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
+    try:
+        with sqlite3.connect(DB_MINING) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT * FROM MINING WHERE userid = ? AND roleid = ?
+            """, (userid, roleid))
+            exst_record = cursor.fetchone()
+            # レコードが存在する場合はzirnum, m_cntをUPDATE
+            updated_zirnum = exst_record[3] + zirnum
+            cursor.execute("""
+            UPDATE MINING SET
+                zirnum = ?,
+                updated_at = ?
+            WHERE
+                userid = ?
+                AND roleid = ?
+            """,
+            (updated_zirnum, dt, userid, roleid))
     except sqlite3.Error as e:
         print('DB UPSERT ERROR: ', e)
     finally:

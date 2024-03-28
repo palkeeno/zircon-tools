@@ -52,7 +52,6 @@ async def send_announce():
         custom_id="total_single"
     )
     # 国ごとにユーザの採掘量ランキングを表示（各10位まで＋自分の順位）
-    # TODO: 国別ユーザランキングをボタンを押したユーザの国で判定して出す。
     button_rank_role = discord.ui.Button(
         label="国内ランキング",
         style=discord.ButtonStyle.success,
@@ -170,11 +169,27 @@ async def output_rank_csv(interaction: discord.Interaction):
     await interaction.response.send_message(file=discord.File(filename))
 
 # zircon_numで指定した数だけ、指定したuserに付与
-# TODO: 国ユーザへのジルコン付与機能。user_mentionで国名指定して付与できるようにする。処理の最初に国名フィルター掛ける
-async def add_zircon(user_mention, zircon_num, m_guild):
-    user_id = int(user_mention.strip('<@!>'))
-    country = util.get_country(m_guild.get_member(user_id))
-    await model.upsert_mining(user_id, country['role'], zircon_num)
+async def add_zircon(user_mention, zircon_num, message):
+    target = {'user_id':None, 'country':None}
+    # 国ユーザの判定
+    for c in config.COUNTRIES:
+        if c['name'] == str(user_mention):
+            target['user_id'] = c['id']
+            target['country'] = c['role']
+    # 一般ユーザの判定
+    try:
+        mention_str = user_mention.strip('<@!>')
+        if target['user_id'] == None and util.isInt(mention_str) :
+            target['user_id'] = int(mention_str)
+            target['country'] = util.get_country(message.guild.get_member(target['user_id']))['role']
+        # ターゲットが存在すればジルコンを付与、そうでなければエラーメッセージ送信
+        if target['user_id'] != None and target['country'] != None:
+            await model.add_zirnum(target['user_id'], target['country'], zircon_num)
+            await message.reply(content=f"{user_mention}に{zircon_num}ジルコン付与しました")
+        else: 
+            await message.reply(content=f"ユーザ：{user_mention}は存在しません")
+    except: 
+        await message.reply(content=f"ユーザ：{user_mention}は存在しません")
 
 # 全イベントの監視
 # ボタン押下の検知->採掘
@@ -220,8 +235,7 @@ async def on_message(message):
         args = message.content.split() # [1]=mention, [2]=num
         if len(args) != 3:
             return
-        await add_zircon(args[1], int(args[2]), message.guild)
-        await message.reply(content=f'{args[1]}に{args[2]}ジルコン付与しました')
+        await add_zircon(args[1], int(args[2]), message)
     if message.content.startswith(config.MSG_CMD):
         # send Management Message to Mining channel as bot
         args = message.content.split() # [1]=message

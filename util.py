@@ -42,3 +42,12 @@ def convertDt2Str(dt:datetime, format):
 # String型からdatetime型に変換
 def convertStr2Dt(dt:str, format):
     return datetime.datetime.strptime(dt, format)
+
+# String型からint型に変換可能か判定
+def isInt(s):
+    try:
+        int(s)
+    except ValueError:
+        return False # 例外が発生=変換できない
+    else:
+        return True # 例外が発生しない=変換不可能
