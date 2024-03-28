@@ -12,4 +12,11 @@ JST = timezone(timedelta(hours=+9), "JST")
 LONG_DT_FORMAT = '%Y-%m-%d %H:%M:%S'
 SHORT_DT_FORMAT = '%Y-%m-%d'
 
-RANK_HEADER = ["順位","ユーザ名","採掘ジルコン","国名","採掘回数","Excellent回数"]
+# csv header
+RANK_HEADER = ["順位","ユーザ名","採掘ジルコン","国名","採掘回数","Excellent回数","メンションid"]
+
+# folder path
+CSV_FOLDER = "./csv/"
+
+# exetention
+CSV = ".csv"

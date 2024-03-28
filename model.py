@@ -111,7 +111,7 @@ async def get_user_rank_by_role(roleid):
             cursor.execute("""
                 SELECT userid, zirnum
                 FROM MINING
-                WHERE roleid = ?
+                WHERE roleid = ? AND userid not in (1,2,3,4)
                 ORDER BY zirnum DESC
             """, (roleid))
             result = cursor.fetchall()
@@ -145,7 +145,7 @@ async def get_user_rank_overall():
     finally:
         connection.close()
     # [N][0]=userid, [N][1]=zirnum, [N][2]=roleid, [N][3]=m_cnt, [N][4]=ex_cnt order by zirunm
-    result_list = [[0]*6 for i in range(len(result))]
+    result_list = [[0]*7 for i in range(len(result))]
     for index, res in enumerate(result):
         print(res[0])
         result_list[index][0] = int(index + 1) # rank
@@ -154,6 +154,7 @@ async def get_user_rank_overall():
         result_list[index][3] = res[2] # roleid
         result_list[index][4] = int(res[3]) # mining count
         result_list[index][5] = int(res[4]) # excellent count
+        result_list[index][6] = "" # ユーザmentionの予約地
     return result_list
 
 # 国ごとの合計をすべて取得

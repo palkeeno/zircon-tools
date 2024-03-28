@@ -160,13 +160,14 @@ async def get_rank(interaction: discord.Interaction, args=""):
 # 全ユーザのランキングをcsv出力する（運営コマンド）
 async def output_rank_csv(interaction: discord.Interaction):
     dtStr = util.convertDt2Str(datetime.now(constants.JST), constants.SHORT_DT_FORMAT)
-    filename = "user-rank_"+dtStr+".csv"
+    filename = constants.CSV_FOLDER+"user-rank_"+dtStr+constants.CSV
     data =  await model.get_user_rank_overall()
     for index, item in enumerate(data):
             user = interaction.guild.get_member(item[1])
             data[index][1] = user.display_name
             country = [ c for c in config.COUNTRIES if c['role'] == item[3]]
             data[index][3] = country[0]['name']
+            data[index][6] = user.mention
     util.write_csv(filename, constants.RANK_HEADER, data)
     await interaction.response.send_message(file=discord.File(filename))
 
