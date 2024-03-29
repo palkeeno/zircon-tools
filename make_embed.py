@@ -10,7 +10,7 @@ def mining(country, result, usr):
     embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
     embed.add_field(
         name=f"採掘結果 :pick: : {result['msg']}", 
-        value=f"{country['name']} {country['stmp']} : + **{result['zirnum']}** ジルコン :gem:", 
+        value=f"{country['name']} {country['stmp']} : + **{result['zirnum']}** :gem:", 
         inline=False
     )
     return embed
@@ -35,7 +35,7 @@ def stats_role(result, country):
     )
     embed.set_thumbnail(url=f"attachment://{country['name']}.jpg")
     embed.add_field(
-        name="総採掘ジルコン :gem:", value=f"{int(result[1])}", inline=True
+        name="総採掘数 :gem:", value=f"{int(result[1])}", inline=True
     )
     embed.add_field(
         name="参加回数 :pick:", value=f"{int(result[2])}", inline=True

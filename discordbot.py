@@ -36,7 +36,7 @@ async def send_announce():
     text = constants.MSG_LETS_MINING
     # 採掘ボタン
     button_mine = discord.ui.Button(
-        label="ジルコン採掘",
+        label="採掘",
         style=discord.ButtonStyle.primary,
         custom_id="mining_zircon")
     # 自分の採掘量表示ボタン
@@ -185,7 +185,7 @@ async def add_zircon(user_mention, zircon_num, message):
         # ターゲットが存在すればジルコンを付与、そうでなければエラーメッセージ送信
         if target['user_id'] != None and target['country'] != None:
             await model.add_zirnum(target['user_id'], target['country'], zircon_num)
-            await message.reply(content=f"{user_mention}に{zircon_num}ジルコン付与しました")
+            await message.reply(content=f"{user_mention}に{zircon_num} :gem: 付与しました")
         else: 
             await message.reply(content=f"ユーザ：{user_mention}は存在しません")
     except: 
