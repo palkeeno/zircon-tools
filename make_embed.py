@@ -63,10 +63,11 @@ def stats_self(result, usr):
     return embed
 
 # ユーザーランキングの表示embed
-def rank_role(result, res_self, cName, usr):
+def rank_role(result, rank_self, cName, usr):
+    rank = ordinal(rank_self) if rank_self != 0 else 'None'
     embed = discord.Embed(
         title=f"{cName}国内 ランキングTOP10",
-        description=f"Your Rank: {ordinal(res_self[0])}",
+        description=f"Your Rank: {rank}",
         color=0x00ffff
     )
     embed.set_author(name=f"{usr.display_name}", icon_url=usr.display_avatar.url)

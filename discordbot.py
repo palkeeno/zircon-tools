@@ -144,11 +144,18 @@ async def get_rank(interaction: discord.Interaction, args=""):
             await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
             return
         result = await model.get_user_rank_role(country['role'])
+        # 自分の順位を取得
         res_self = [r for r in result if r[1] == interaction.user.id]
+        rank_self = None
+        try:
+            rank_self = res_self[0][0]
+        except IndexError:
+            rank_self = 0
+        # TOP10を取得
         for index, item in enumerate(result):
             user = interaction.guild.get_member(item[1])
             result[index][1] = user.display_name # [0]=rank, [1]=user_name, [2]=zirnum
-        embed = make_embed.rank_role(result, res_self[0], country['name'], interaction.user)
+        embed = make_embed.rank_role(result, rank_self, country['name'], interaction.user)
         await interaction.response.send_message(embed=embed, ephemeral=True)
     elif args == "country_all":
         result = await model.get_total_all_countries()
