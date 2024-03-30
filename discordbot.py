@@ -69,7 +69,7 @@ async def send_announce():
 # ジルコン採掘アクション
 async def mining_zircon(interaction: discord.Interaction):
     country = util.get_country(interaction.user)
-    if await error.check_country(interaction, country):
+    if error.check_country(country):
         await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
         return
     # DBのレコードを見て採掘済みかチェック
@@ -96,7 +96,7 @@ async def mining_zircon(interaction: discord.Interaction):
 ### args = single :現在の所属国の全体採掘量
 async def get_stats(interaction: discord.Interaction, arg:str=""):
     country = util.get_country(interaction.user)
-    if await error.check_country(interaction, country):
+    if error.check_country(country):
         await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
         return
     # 引数によってとる内容を出し分け、結果がNoneの場合は無視
@@ -140,6 +140,9 @@ async def get_rank(interaction: discord.Interaction, args=""):
     now = datetime.now()
     if args == "user_role":
         country = util.get_country(interaction.user)
+        if error.check_country(country):
+            await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
+            return
         result = await model.get_user_rank_role(country['role'])
         res_self = [r for r in result if r[1] == interaction.user.id]
         for index, item in enumerate(result):
