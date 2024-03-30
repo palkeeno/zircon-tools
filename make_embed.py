@@ -1,4 +1,5 @@
 import discord
+from util import ordinal
 
 # 採掘結果のembed
 def mining(country, result, usr):
@@ -65,7 +66,7 @@ def stats_self(result, usr):
 def rank_role(result, res_self, cName, usr):
     embed = discord.Embed(
         title=f"{cName}国内 ランキングTOP10",
-        description=f"Your Rank: {res_self[0]} th",
+        description=f"Your Rank: {ordinal(res_self[0])}",
         color=0x00ffff
     )
     embed.set_author(name=f"{usr.display_name}", icon_url=usr.display_avatar.url)
@@ -73,7 +74,7 @@ def rank_role(result, res_self, cName, usr):
     for index in range(min(10, len(result))):
         embed.add_field(
             name="",
-            value=f"**`{result[index][0]}.`** {result[index][1]} • :gem: {result[index][2]}",
+            value=f"**{result[index][0]}.** `{result[index][1]}` • :gem: {result[index][2]}",
             inline=False
         )
     return embed

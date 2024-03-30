@@ -144,7 +144,7 @@ async def get_rank(interaction: discord.Interaction, args=""):
         res_self = [r for r in result if r[1] == interaction.user.id]
         for index, item in enumerate(result):
             user = interaction.guild.get_member(item[1])
-            result[index][1] = user.mention # [0]=rank, [1]=user_mention, [2]=zirnum
+            result[index][1] = user.display_name # [0]=rank, [1]=user_name, [2]=zirnum
         embed = make_embed.rank_role(result, res_self[0], country['name'], interaction.user)
         await interaction.response.send_message(embed=embed, ephemeral=True)
     elif args == "country_all":

@@ -51,3 +51,10 @@ def isInt(s):
         return False # 例外が発生=変換できない
     else:
         return True # 例外が発生しない=変換不可能
+
+def ordinal(n):
+    if 10 <= n%100 <= 20:
+        suffix = 'th'
+    else:
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+    return str(n) + suffix
