@@ -250,10 +250,11 @@ async def on_message(message):
     if message.content.startswith(config.MSG_CMD):
         # send Management Message to Mining channel as bot
         args = message.content.split() # [1]=message
-        if len(args) != 2:
+        if len(args) < 2:
             return
         ch_msg = client.get_channel(config.CHID_MINING)
-        await ch_msg.send(content=args[1])
+        msg = " ".join(args[1:])
+        await ch_msg.send(content=msg)
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)
