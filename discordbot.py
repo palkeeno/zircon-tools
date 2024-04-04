@@ -154,7 +154,7 @@ async def get_rank(interaction: discord.Interaction, args=""):
         # TOP10を取得
         for index, item in enumerate(result):
             user = interaction.guild.get_member(item[1])
-            result[index][1] = user.display_name # [0]=rank, [1]=user_name, [2]=zirnum
+            result[index][1] = user.display_name if user != None else "None" # [0]=rank, [1]=user_name, [2]=zirnum
         embed = make_embed.rank_role(result, rank_self, country['name'], interaction.user)
         await interaction.response.send_message(embed=embed, ephemeral=True)
     elif args == "country_all":
@@ -172,10 +172,10 @@ async def output_rank_csv(interaction: discord.Interaction):
     data =  await model.get_user_rank_overall()
     for index, item in enumerate(data):
             user = interaction.guild.get_member(item[1])
-            data[index][1] = user.display_name
+            data[index][1] = user.display_name if user != None else "None"
             country = [ c for c in config.COUNTRIES if c['role'] == item[3]]
             data[index][3] = country[0]['name']
-            data[index][6] = user.mention
+            data[index][6] = user.mention if user != None else "None"
     util.write_csv(filename, constants.RANK_HEADER, data)
     await interaction.response.send_message(file=discord.File(filename))
 
