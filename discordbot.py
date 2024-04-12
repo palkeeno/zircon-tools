@@ -27,6 +27,9 @@ async def on_ready():
 @tasks.loop(seconds=60, reconnect=True)
 async def check_announce():
     now = datetime.now(constants.JST)
+    # 鉱山オープンフラグがFalseなら鉱山がストップしているのでアナウンスが流れない
+    if config.MINE_OPEN == False:
+        return
     if (now.hour in config.ANN_HOUR) and (now.minute in config.ANN_MINUTE):
         await model.unflag_mining()
         await send_announce()
@@ -68,6 +71,9 @@ async def send_announce():
 
 # ジルコン採掘アクション
 async def mining_zircon(interaction: discord.Interaction):
+    if config.MINE_OPEN == False:
+        await interaction.response.send_message(content=constants.MSG_MINE_CLOSED, ephemeral=True)
+        return
     country = util.get_country(interaction.user)
     if error.check_country(country):
         await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
@@ -128,9 +134,16 @@ async def send_view_to_manage(channel):
         style=discord.ButtonStyle.secondary,
         custom_id="rank_csv"
     )
+    # 鉱山の営業ステータス確認
+    button_mine_status = discord.ui.Button(
+        label="鉱山の営業状況",
+        style=discord.ButtonStyle.gray,
+        custom_id="mine_status"
+    )
     view = discord.ui.View()
     view.add_item(button_rank_country)
     view.add_item(button_rank_csv)
+    view.add_item(button_mine_status)
     await channel.send(view=view)
 
 # 採掘量ランキングを取得する
@@ -221,6 +234,9 @@ async def on_interaction(interaction: discord.Interaction):
                 await get_rank(interaction, "country_all")
             elif custom_id == "rank_csv":
                 await output_rank_csv(interaction)
+            elif custom_id == "mine_status":
+                status = "OPEN" if config.MINE_OPEN else "CLOSE"
+                await interaction.response.send_message(content=status, ephemeral=False)
     except KeyError:
         pass
 
@@ -255,6 +271,10 @@ async def on_message(message):
         ch_msg = client.get_channel(config.CHID_MINING)
         msg = " ".join(args[1:])
         await ch_msg.send(content=msg)
+    if message.content == config.START_CMD:
+        config.MINE_OPEN = True
+    if message.content == config.STOP_CMD:
+        config.MINE_OPEN = False
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)

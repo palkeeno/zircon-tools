@@ -28,7 +28,12 @@ RESET_CMD = os.getenv('RESET_CMD')
 MNG_CMD = os.getenv('MNG_CMD')
 ADD_CMD = os.getenv('ADD_CMD')
 MSG_CMD = os.getenv('MSG_CMD')
+START_CMD = os.getenv('START_CMD')
+STOP_CMD = os.getenv('STOP_CMD')
 ##################
+
+# mining flag
+MINE_OPEN = True
 
 # announce clock
 ANN_HOUR = [0,12]
