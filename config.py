@@ -48,10 +48,10 @@ PROBABILITY = [
 ]
 
 # imgs
-BRAVE_FLAG = discord.File("./assets/Brave.jpg", filename="Brave.jpg")
-FREEDOM_FLAG = discord.File("./assets/Freedom.jpg", filename="Freedom.jpg")
-GLORY_FLAG = discord.File("./assets/Glory.jpg", filename="Glory.jpg")
-PEACEFUL_FLAG = discord.File("./assets/Peaceful.jpg", filename="Peaceful.jpg")
+BRAVE_FLAG = discord.File(CWD+"/assets/Brave.jpg", filename="Brave.jpg")
+FREEDOM_FLAG = discord.File(CWD+"/assets/Freedom.jpg", filename="Freedom.jpg")
+GLORY_FLAG = discord.File(CWD+"/assets/Glory.jpg", filename="Glory.jpg")
+PEACEFUL_FLAG = discord.File(CWD+"/assets/Peaceful.jpg", filename="Peaceful.jpg")
 
 # country roles id
 COUNTRIES = [

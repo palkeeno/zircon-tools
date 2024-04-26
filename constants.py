@@ -1,4 +1,5 @@
 from datetime import timezone, timedelta
+from config import CWD
 
 # messages
 MSG_LETS_MINING = "今日も元気に採掘しましょう！ :gem:"
@@ -17,7 +18,7 @@ SHORT_DT_FORMAT = '%Y-%m-%d'
 RANK_HEADER = ["順位","ユーザ名","採掘数","国名","採掘回数","Excellent回数","メンションid"]
 
 # folder path
-CSV_FOLDER = "./csv/"
+CSV_FOLDER = CWD+"/csv/"
 
 # exetention
 CSV = ".csv"
