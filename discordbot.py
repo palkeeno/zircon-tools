@@ -1,3 +1,4 @@
+import os
 import discord
 from discord.ext import tasks
 import random
@@ -11,6 +12,7 @@ import util
 import error
 
 # init
+os.chdir(config.CWD)
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
