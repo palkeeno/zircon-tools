@@ -51,6 +51,7 @@ def stats_self(result, usr):
         color=0x0000ff
     )
     embed.set_author(name=f"{usr.display_name}", icon_url=usr.display_avatar.url)
+
     embed.add_field(
         name="採掘量 :gem:", value=f"{int(result[2])}", inline=True
     )
