@@ -1,4 +1,5 @@
 import discord
+from util import ordinal
 
 # 採掘結果のembed
 def mining(country, result, usr):
@@ -10,7 +11,7 @@ def mining(country, result, usr):
     embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
     embed.add_field(
         name=f"採掘結果 :pick: : {result['msg']}", 
-        value=f"{country['name']} {country['stmp']} : + **{result['zirnum']}** ジルコン :gem:", 
+        value=f"{country['name']} {country['stmp']} : + **{result['zirnum']}** :gem:", 
         inline=False
     )
     return embed
@@ -18,7 +19,7 @@ def mining(country, result, usr):
 # 採掘結果Excellentを雑談チャネルに投稿するときのembed
 def excellent(usr):
     embed = discord.Embed(
-        title="Excellent発掘しました！ :gem::gem::gem:",
+        title="Excellent採掘しました！ :gem::gem::gem:",
         description="",
         color=0x00ff00
     )
@@ -29,16 +30,16 @@ def excellent(usr):
 # 1国分の採掘合計embed
 def stats_role(result, country):
     embed = discord.Embed(
-        title="自国の採掘量",
+        title=f"{country['name']}国",
         description="",
         color=0x0000ff
     )
-    embed.set_author(name=country['name'])
     embed.set_thumbnail(url=f"attachment://{country['name']}.jpg")
     embed.add_field(
-        name=f"ジルコン採掘合計 :gem: : {int(result[1])}", 
-        value="", 
-        inline=False
+        name="総採掘数 :gem:", value=f"{int(result[1])}", inline=True
+    )
+    embed.add_field(
+        name="参加回数 :pick:", value=f"{int(result[2])}", inline=True
     )
     return embed
 
@@ -46,43 +47,51 @@ def stats_role(result, country):
 def stats_self(result, usr):
     embed = discord.Embed(
         title="",
-        description="所属国でのあなたの採掘量は...",
-        color=0x0000ff
-    )
-    embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
-    embed.add_field(
-        name=f"{result[2]} :gem:", 
-        value="", 
-        inline=False
-    )
-    return embed
-
-# 全国の採掘合計embed
-def stats_all(result, country):
-    embed = discord.Embed(
-        title="各国採掘状況 :pick:",
         description="",
         color=0x0000ff
     )
-    for c in country:
-        flg = 0
-        for res in result:
-            if c['id'] == res[0]:
-                zirnum = int(res[1])
-                embed.add_field(
-                    name=f"{c['stmp']} {c['name']} : {zirnum} :gem:", 
-                    value="", 
-                    inline=False
-                )
-                flg = 1
-                break
+    embed.set_author(name=f"{usr.display_name}", icon_url=usr.display_avatar.url)
 
-        # 結果がまだない国は0個で表示
-        if flg == 0:
-            embed.add_field(
-                name=f"{c['stmp']} {c['name']} : 0 :gem:", 
-                value="", 
-                inline=False
-            )
+    embed.add_field(
+        name="採掘量 :gem:", value=f"{int(result[2])}", inline=True
+    )
+    embed.add_field(
+        name="採掘回数 :pick:", value=f"{int(result[4])}", inline=True
+    )
+    embed.add_field(
+        name="Excellent回数 :tada:", value=f"{int(result[5])}", inline=True
+    )
     return embed
 
+# ユーザーランキングの表示embed
+def rank_role(result, rank_self, cName, usr):
+    rank = ordinal(rank_self) if rank_self != 0 else 'None'
+    embed = discord.Embed(
+        title=f"{cName}国内 ランキングTOP10",
+        description=f"Your Rank: {rank}",
+        color=0x00ffff
+    )
+    embed.set_author(name=f"{usr.display_name}", icon_url=usr.display_avatar.url)
+    # result[[user_mention1, zirnum1,...], [user_mention2, zirnum2,...],...]
+    for index in range(min(10, len(result))):
+        embed.add_field(
+            name="",
+            value=f"**{result[index][0]}.** `{result[index][1]}` • :gem: {result[index][2]}",
+            inline=False
+        )
+    return embed
+
+# 国対抗ランキングのembed
+def rank_country(result):
+    embed = discord.Embed(
+        title="国対抗ランキング",
+        description="",
+        color=0x0000ff
+    )
+    for rank, res in enumerate(result):
+        embed.add_field(
+            name=f"{rank+1} : {res[0]['stmp']} {res[0]['name']} : {res[1]} :gem:",
+            value="",
+            inline=False
+        )
+    return embed
