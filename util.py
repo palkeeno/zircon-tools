@@ -10,7 +10,7 @@ def gacha(rval, conf):
 # 送信者の国ロールを取得する
 def get_country(user):
     for usr_role in user.roles:
-        for role in config.COUNTRYS:
+        for role in config.COUNTRIES:
             if usr_role.id == role['id']:
                 return role
     return None

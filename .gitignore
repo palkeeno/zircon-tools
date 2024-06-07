@@ -1,5 +1,7 @@
 # project setting
 *.db
+.archive
+prd/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

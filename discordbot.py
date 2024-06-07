@@ -1,90 +1,179 @@
 import discord
-from discord import app_commands
 from discord.ext import tasks
-import config
 import random
+from datetime import timezone, timedelta, datetime
+# made for this prj
+import config
 import make_embed
 import model
 import util
 import error
 
+# init
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
-tree = app_commands.CommandTree(client)
-cooldown_obj = app_commands.Cooldown(1, config.CD_MINING) # クールダウン用オブジェクト
+JST = timezone(timedelta(hours=+9), "JST")
 
 # Bot起動時に呼び出される関数
 @client.event
 async def on_ready():
     # db作成
     await model.create_zmdb()
-    # スラッシュコマンドを起動
-    await tree.sync()
+    # 定時アナウンス開始
+    check_announce.start()
     print("Ready!")
 
-# クールダウンチェック用のオブジェクト、
-def cooldown_checker(interaction: discord.Interaction):
-    return cooldown_obj
+# 毎日0時を検知して採掘アナウンスを発火
+@tasks.loop(seconds=60, reconnect=True)
+async def check_announce():
+    now = datetime.now(JST)
+    if now.hour == config.ANN_HOUR and now.minute == config.ANN_MINUTE:
+        await send_announce()
 
-# button = discord.ui.Button(label="ジルコン採掘", style=discord.ButtonStyle.primary, custom_id="mining_zircon")
-# view = discord.ui.View()
-# view.add_item(button)
+# 採掘アナウンスを送信
+async def send_announce():
+    text = config.MSG_LETS_MINING
+    # 採掘ボタン
+    button_mine = discord.ui.Button(
+        label="ジルコン採掘",
+        style=discord.ButtonStyle.primary,
+        custom_id="mining_zircon")
+    # 自分の採掘量表示ボタン（引数＝self）
+    button_sum_self = discord.ui.Button(
+        label="自己採掘量",
+        style=discord.ButtonStyle.secondary,
+        custom_id="sum_self"
+    )
+    # 採掘量表示ボタン（引数＝single）
+    button_total = discord.ui.Button(
+        label="自国状況",
+        style=discord.ButtonStyle.secondary,
+        custom_id="total_single"
+    )
+    view = discord.ui.View()
+    view.add_item(button_mine)
+    view.add_item(button_sum_self)
+    view.add_item(button_total)
 
-@tree.command(name="zircon", description="ジルコン採掘をします")
-@app_commands.checks.dynamic_cooldown(cooldown_checker)
-async def slash_zircon(interaction: discord.Interaction):
+    channel = client.get_channel(config.CHID_MINING)
+    await channel.send(content=text, view=view)
+
+async def mining_zircon(interaction: discord.Interaction):
     country = util.get_country(interaction.user)
-    # ロールとチャンネルをチェック
-    if await error.check_invalid_minor(interaction, country):
-        # 不適格であったら、クールダウンをリセットして終了
-        app_commands.Cooldown.reset(cooldown_obj)
+    if await error.check_country(interaction, country):
+        await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
         return
+    # DBから採掘済みかチェック
+    ures = await model.get_user_result(interaction.user.id, country['id'])
+    # はじめての人でないか判定
+    if ures != None:
+        latest_updated = datetime.fromtimestamp(ures[3], JST).date()
+        now = datetime.now(JST).date()
+        if latest_updated == now :
+            # 採掘済みなら、また明日来るように伝えて終了
+            await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
+            return
     # 採掘結果を出す
     result = util.gacha(random.random(), config.RESULTS)
     embed = make_embed.mining(country, result, interaction.user)
     # データを保存
-    await model.insert_zm(interaction.user.id, country['id'], result['zirnum'])
+    await model.insert_mining(interaction.user.id, country['id'], result['zirnum'])
     # メッセージを送信
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+    # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
+    if result['id'] == 0:
+        exc_embed = make_embed.excellent(interaction.user)
+        channel = client.get_channel(country['chid'])
+        await channel.send(embed=exc_embed)
 
-@tree.command(name="total", description="自国の採掘総量を確認します。引数に all 指定で4か国分表示します。")
-async def slash_total(interaction: discord.Interaction, all:str=""):
+async def get_stats(interaction: discord.Interaction, arg:str=""):
     country = util.get_country(interaction.user)
-    # ロールとチャンネルをチェック
-    if await error.check_invalid_minor(interaction, country):
-        # 不適格なら終了
+    if await error.check_country(interaction, country):
+        await interaction.response.send_message(content=config.MSG_ONCE_MINING, ephemeral=True)
         return
-    # "all"付きなら4か国分、そうでないなら自国分
-    if all == "all":
-        result = await model.select_total_all_role()
+    
+    elif arg == "self":
+        # "self"付きなら自分の現在の所属国での採掘量
+        result = await model.get_user_result(interaction.user.id, country['id'])
         if result == None:
             await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
             return
-        embed = make_embed.stats_all(result, config.COUNTRYS)
-        await interaction.response.send_message(embed=embed)
-    else:
+        embed = make_embed.stats_self(result, interaction.user)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    elif arg == "single":
         # 発火者のロールを参照して採掘合計を返す、結果がNoneの場合は無視
-        result = await model.select_total_by_role(country['id'])
+        result = await model.select_total_single_country(country['id'])
         if result == None:
             result = (country['id'], 0)
-        embed = make_embed.stats_role(result[1], country)
-        await interaction.response.send_message(file=country['img'], embed=embed)
+        embed = make_embed.stats_role(result, country)
+        await interaction.response.send_message(file=country['img'], embed=embed, ephemeral=True)
 
-# メッセージの検知
+# 4国すべての採掘状況を表示（運営向け）
+async def get_all(interaction: discord.Interaction):
+    result = await model.select_total_all_country()
+    if result == None:
+        await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
+        return
+    embed = make_embed.stats_all(result, config.COUNTRIES)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# 呼び出した人だけが押せるボタン（運営向け）
+async def send_view_to_manage(channel):
+    # 4国すべての採掘量表示ボタン
+    button_total = discord.ui.Button(
+        label="4国状況",
+        style=discord.ButtonStyle.secondary,
+        custom_id="total_all"
+    )
+    view = discord.ui.View()
+    view.add_item(button_total)
+
+    await channel.send(view=view)
+
+# zircon_numで指定した数だけ、userに付与
+async def add_zircon(user_mention, zircon_num, m_guild):
+    user_id = int(user_mention.strip('<@!>'))
+    country_role = util.get_country(m_guild.get_member(user_id))
+    await model.insert_mining(user_id, country_role['id'], zircon_num)
+
+# 全イベントの監視
+# ボタン押下の検知->採掘
+@client.event
+async def on_interaction(interaction: discord.Interaction):
+    try:
+        if interaction.data['component_type'] == 2:
+            custom_id = interaction.data['custom_id']
+            if custom_id == "mining_zircon":
+                await mining_zircon(interaction)
+            elif custom_id == "total_single":
+                await get_stats(interaction, "single")
+            elif custom_id == "sum_self":
+                await get_stats(interaction, "self")
+            elif custom_id == "total_all":
+                await get_all(interaction)
+    except KeyError:
+        pass
+
 @client.event
 async def on_message(message):
-    # 自身が送信したメッセージには反応しない
-    if message.author == client.user:
-        return
-    # 送信者がbotの場合は反応しない
     if message.author.bot:
         return
-
-# エラー時の処理
-@tree.error
-async def on_command_error(interaction, err):
-    if isinstance(err, app_commands.CommandOnCooldown):
-        await error.catch_cooldown(interaction, int(err.retry_after))
+    if message.channel != client.get_channel(config.MCH):
+        return
+    if message.content == config.DEBUG_CMD:
+        await send_announce()
+        await message.reply(content="アナウンスを発動しました")
+    if message.content == config.RESET_CMD:
+        await model.reset_zmdb()
+        await message.reply(content="データベースをリセットしました")
+    if message.content == config.VIEW_CMD:
+        await send_view_to_manage(message.channel)
+    if message.content.startswith(config.ADD_CMD):
+        args = message.content.split() # [1]=mention, [2]=num
+        if len(args) != 3:
+            return
+        await add_zircon(args[1], int(args[2]), message.guild)
+        await message.reply(content=f'{args[1]}に{args[2]}ジルコン付与しました')
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)

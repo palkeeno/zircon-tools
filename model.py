@@ -21,14 +21,28 @@ async def create_zmdb():
     finally:
         connection.close()
 
+# テーブルの中身をすべてクリア
+async def reset_zmdb():
+    try:
+        with sqlite3.connect(DB_MINING) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                        DELETE
+                        FROM MINING
+            """)
+    except sqlite3.Error as e:
+        print('DB CREATION ERROR: ', e)
+    finally:
+        connection.close()
+
 # ユーザーごとの結果を返却する
-async def select_zm_user(userid, roleid):
+async def get_user_result(userid, roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT userid, roleid, zirnum
+                SELECT userid, roleid, zirnum, updated_at
                 FROM MINING 
                 WHERE userid = ?
                 AND roleid = ?
@@ -39,12 +53,11 @@ async def select_zm_user(userid, roleid):
         print('DB ERROR: ', e)
     finally:
         connection.close()
-
-    # [0]=userid, [1]=roleid, [2]=zirnum
+    # [0]=userid, [1]=roleid, [2]=zirnum, [3]=updated timestamp(UNIX)
     return result
 
 # 国ごとの合計をすべて取得
-async def select_total_all_role():
+async def select_total_all_country():
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -59,18 +72,17 @@ async def select_total_all_role():
         print('DB ERROR: ', e)
     finally:
         connection.close()
-    
     # List of result, [0]=roleid, [1]=total of zirnum
     return result
 
 # 指定された国の合計を取得
-async def select_total_by_role(roleid):
+async def select_total_single_country(roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT roleid, zirnum
+                SELECT roleid, TOTAL(zirnum)
                 FROM MINING
                 WHERE roleid = ?
             """,
@@ -80,12 +92,11 @@ async def select_total_by_role(roleid):
         print('DB ERROR: ', e)
     finally:
         connection.close()
-    
     # [0]=roleid, [1]=total of zirnum
     return result
 
 # 採掘結果をUPSERT
-async def insert_zm(userid, roleid, zirnum):
+async def insert_mining(userid, roleid, zirnum):
     timestamp = datetime.datetime.now().timestamp()
     try:
         with sqlite3.connect(DB_MINING) as connection:
