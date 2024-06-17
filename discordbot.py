@@ -10,7 +10,6 @@ import make_embed
 import models.Mining as Mining
 import models.Users as Users
 import util
-import error
 
 # init
 os.chdir(config.CWD)
@@ -79,7 +78,7 @@ async def mining_zircon(interaction: discord.Interaction):
         await interaction.response.send_message(content=constants.MSG_MINE_CLOSED, ephemeral=True)
         return
     country = util.get_country(interaction.user)
-    if error.check_country(country):
+    if util.check_country(country):
         await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
         return
     # DBのレコードを見て採掘済みかチェック
@@ -107,14 +106,14 @@ async def mining_zircon(interaction: discord.Interaction):
 ### args = single :現在の所属国の全体採掘量
 async def get_stats(interaction: discord.Interaction, arg:str=""):
     country = util.get_country(interaction.user)
-    if error.check_country(country):
+    if util.check_country(country):
         await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
         return
     # 引数によってとる内容を出し分け、結果がNoneの場合は無視
     if arg == "self":
         result = await Mining.get_user_single(interaction.user.id, country['role'])
         if result == None:
-            await interaction.response.send_message(error.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
+            await interaction.response.send_message(constants.E003_DATA_NOT_FOUND['msg'], ephemeral=True)
             return
         embed = make_embed.stats_self(result, interaction.user)
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -158,7 +157,7 @@ async def get_rank(interaction: discord.Interaction, args=""):
     now = datetime.now()
     if args == "user_role":
         country = util.get_country(interaction.user)
-        if error.check_country(country):
+        if util.check_country(country):
             await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
             return
         result = await Mining.get_rank_user_country(country['role'])
