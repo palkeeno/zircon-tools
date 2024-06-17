@@ -72,15 +72,14 @@ async def send_announce():
     channel = client.get_channel(config.CHID_MINING)
     await channel.send(content=text, view=view)
 
+### 国未所属チェックはDiscordチャンネル側で設定
+
 # ジルコン採掘アクション
 async def mining_zircon(interaction: discord.Interaction):
     if config.MINE_OPEN == False:
         await interaction.response.send_message(content=constants.MSG_MINE_CLOSED, ephemeral=True)
         return
     country = util.get_country(interaction.user)
-    if util.check_country(country):
-        await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
-        return
     # DBのレコードを見て採掘済みかチェック
     ures = await Mining.get_user_single(interaction.user.id, country['role'])
     if ures != None:
@@ -106,9 +105,6 @@ async def mining_zircon(interaction: discord.Interaction):
 ### args = single :現在の所属国の全体採掘量
 async def get_stats(interaction: discord.Interaction, arg:str=""):
     country = util.get_country(interaction.user)
-    if util.check_country(country):
-        await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
-        return
     # 引数によってとる内容を出し分け、結果がNoneの場合は無視
     if arg == "self":
         result = await Mining.get_user_single(interaction.user.id, country['role'])
@@ -157,9 +153,6 @@ async def get_rank(interaction: discord.Interaction, args=""):
     now = datetime.now()
     if args == "user_role":
         country = util.get_country(interaction.user)
-        if util.check_country(country):
-            await interaction.response.send_message(content=constants.MSG_COUNTRY_ROLE, ephemeral=True)
-            return
         result = await Mining.get_rank_user_country(country['role'])
         # 自分の順位を取得
         res_self = [r for r in result if r[1] == interaction.user.id]

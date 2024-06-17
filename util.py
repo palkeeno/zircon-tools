@@ -58,9 +58,3 @@ def ordinal(n):
     else:
         suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
     return str(n) + suffix
-
-def check_country(country):
-    # 国ロールがない場合はエラー
-    if country == None:
-        return True
-    return False
