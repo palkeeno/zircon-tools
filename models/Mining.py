@@ -9,13 +9,14 @@ import util
 # 採掘結果のテーブル作成
 ### zirnum = number of mined zircon
 ### m_cnt = total count of mining as this user
+### ex_cnt = total count of excellent as this user
 ### done_flag = the flag of wheather this user have done mining or not, 0:Flase, 1:True
-async def create_zmdb():
+async def create_db():
     isNew = False
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
-            # done_flag = 0:False, 1:True
+            # 採掘テーブルがなければ作成
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS MINING(
                     id INTEGER primary key autoincrement,
@@ -28,16 +29,17 @@ async def create_zmdb():
                     updated_at TEXT
                 )
             """)
+            # 新規作成かどうか判定
             cursor.execute("""
                 SELECT * FROM MINING WHERE userid = 1
             """)
             isNew = (cursor.fetchone() == None)
     except sqlite3.Error as e:
-        print('DB CREATION ERROR: ', e)
+        print('DB-MINING CREATION ERROR: ', e)
     finally:
         connection.close()
     
-    # データベースを初期起動する場合、国ユーザを初期作成
+    # データベースを新規作成する場合、国ユーザを初期作成
     if isNew:
         init_country_record()
 
@@ -54,12 +56,12 @@ def init_country_record():
                         VALUES(?, ?, 0, 0, 0, 0, ?)
                 """, (country['id'], country['role'], now))
     except sqlite3.Error as e:
-        print('DB INITIALIZE ERROR: ', e)
+        print('DB-MINING INITIALIZE ERROR: ', e)
     finally:
         connection.close()
 
 # 採掘テーブルの中身をすべてクリア
-async def reset_zmdb():
+async def reset_db():
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
@@ -68,14 +70,14 @@ async def reset_zmdb():
                 FROM MINING
             """)
     except sqlite3.Error as e:
-        print('DB RESET ERROR: ', e)
+        print('DB-MINING RESET ERROR: ', e)
     finally:
         connection.close()
     # 国ユーザを初期作成
     init_country_record()
 
 # 採掘テーブルの"done_flag"を下げる
-async def unflag_mining():
+async def undo_done_flag():
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
@@ -84,12 +86,12 @@ async def unflag_mining():
                 SET done_flag = 0
             """)
     except sqlite3.Error as e:
-        print('DB UNFLAG ERROR: ', e)
+        print('DB UNDO_DONE_FLAG ERROR: ', e)
     finally:
         connection.close()
 
-# ユーザーごとの結果を返却する
-async def get_user_result(userid, roleid):
+# ユーザー１人の結果を返却する
+async def get_user_single(userid, roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -110,7 +112,7 @@ async def get_user_result(userid, roleid):
     return result
 
 # 指定の国のユーザ採掘ランキングをすべて取得する
-async def get_user_rank_role(roleid):
+async def get_rank_user_country(roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -135,7 +137,7 @@ async def get_user_rank_role(roleid):
     return result_list
 
 # 全体のユーザ採掘ランキングをすべて取得する
-async def get_user_rank_overall():
+async def get_rank_user_overall():
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -164,7 +166,7 @@ async def get_user_rank_overall():
     return result_list
 
 # 国ごとの合計をすべて取得
-async def get_total_all_countries():
+async def get_country_each():
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -188,7 +190,7 @@ async def get_total_all_countries():
     return result_list
 
 # 指定された国の合計を取得
-async def get_total_single_country(roleid):
+async def get_country_single(roleid):
     result = None
     try:
         with sqlite3.connect(DB_MINING) as connection:
@@ -208,8 +210,10 @@ async def get_total_single_country(roleid):
     return result
 
 # 採掘結果をUPSERT
-async def upsert_mining(userid, roleid, zirnum, isExcellent):
+# TODO: add_flag を追加してaddの時はupsert項目を変えるように修正（優先度：低）
+async def upsert(userid, roleid, zirnum, isExcellent):
     dt = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
+    # 採掘テーブルにUPSERT
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
@@ -217,9 +221,9 @@ async def upsert_mining(userid, roleid, zirnum, isExcellent):
                 SELECT * FROM MINING WHERE userid = ? AND roleid = ?
             """, (userid, roleid))
             exst_record = cursor.fetchone()
-            # print(exst_record, zirnum)
+            
             if exst_record:
-                # レコードが存在する場合はzirnum, m_cntをUPDATE
+                # レコードが存在する場合はUPDATE
                 updated_zirnum = exst_record[3] + zirnum
                 updated_cnt = exst_record[4] + 1
                 updated_ex = exst_record[5] + isExcellent
@@ -244,7 +248,7 @@ async def upsert_mining(userid, roleid, zirnum, isExcellent):
                 """,
                 (userid, roleid, zirnum, isExcellent, dt))
     except sqlite3.Error as e:
-        print('DB UPSERT ERROR: ', e)
+        print('DB-MINING UPSERT ERROR: ', e)
     finally:
         connection.close()
 
@@ -252,13 +256,13 @@ async def upsert_mining(userid, roleid, zirnum, isExcellent):
 async def add_zirnum(userid, roleid, zirnum):
     dt = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
     try:
-        with sqlite3.connect(DB_MINING) as connection:
-            cursor = connection.cursor()
+        with sqlite3.connect(DB_MINING) as conn1:
+            cursor = conn1.cursor()
             cursor.execute("""
                 SELECT * FROM MINING WHERE userid = ? AND roleid = ?
             """, (userid, roleid))
             exst_record = cursor.fetchone()
-            # レコードが存在する場合はzirnum, m_cntをUPDATE
+            # レコードが存在する場合はzirnumをUPDATE
             updated_zirnum = exst_record[3] + zirnum
             cursor.execute("""
             UPDATE MINING SET
@@ -270,6 +274,7 @@ async def add_zirnum(userid, roleid, zirnum):
             """,
             (updated_zirnum, dt, userid, roleid))
     except sqlite3.Error as e:
-        print('DB UPSERT ERROR: ', e)
+        print('DB-MINING UPSERT ERROR: ', e)
     finally:
-        connection.close()
+        conn1.close()
+    
