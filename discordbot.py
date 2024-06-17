@@ -90,7 +90,7 @@ async def mining_zircon(interaction: discord.Interaction):
             return
     # 採掘結果を出す
     result = util.gacha(random.random(), config.PROBABILITY)
-    embed = make_embed.mining(country, result, interaction.user)
+    embed = make_embed.mining(country, result, interaction.user, ures[2])
     isExcellent = (result['id'] == 0) # 採掘結果がエクセレントかどうか判定
     # 採掘結果をDBに保存して、メッセージを送信
     await Mining.upsert(interaction.user.id, country['role'], result['zirnum'], isExcellent)

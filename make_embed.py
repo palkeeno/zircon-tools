@@ -2,7 +2,7 @@ import discord
 from util import ordinal
 
 # 採掘結果のembed
-def mining(country, result, usr):
+def mining(country, result, usr, total):
     embed = discord.Embed(
         title="",
         description="",
@@ -12,6 +12,11 @@ def mining(country, result, usr):
     embed.add_field(
         name=f"採掘結果 :pick: : {result['msg']}", 
         value=f"{country['name']} {country['stmp']} : + **{result['zirnum']}** :gem:", 
+        inline=False
+    )
+    embed.add_field(
+        name=f"",
+        value=f"これまでの採掘数 **{result['zirnum']+total}** :gem:",
         inline=False
     )
     return embed
