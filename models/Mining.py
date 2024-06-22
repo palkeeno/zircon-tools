@@ -48,8 +48,8 @@ def init_country_record():
     try:
         with sqlite3.connect(DB_MINING) as connection:
             cursor = connection.cursor()
+            now = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
             for country in COUNTRIES:
-                now = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
                 cursor.execute("""
                     INSERT INTO MINING
                         (userid, roleid, zirnum, m_cnt, ex_cnt, done_flag, updated_at)
@@ -200,7 +200,7 @@ async def get_country_single(roleid):
                 FROM MINING
                 WHERE roleid = ?
             """,
-            (roleid,))
+            (roleid, ))
             result = cursor.fetchone()
     except sqlite3.Error as e:
         print('DB GET_TOTAL_SINGLE_COUTNRY ERROR: ', e)
@@ -275,6 +275,7 @@ async def add_zirnum(userid, roleid, zirnum):
             (updated_zirnum, dt, userid, roleid))
     except sqlite3.Error as e:
         print('DB-MINING UPSERT ERROR: ', e)
+        print('userid: ', userid)
     finally:
         conn1.close()
     
