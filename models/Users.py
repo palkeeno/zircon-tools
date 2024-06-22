@@ -99,7 +99,7 @@ async def get_single(userid):
                 FROM USERS
                 WHERE userid = ?
             """,
-            (userid))
+            (userid, ))
             result = cursor.fetchone()
     except sqlite3.Error as e:
         print('DB-USERS GET_SINGLE ERROR: ', e)
