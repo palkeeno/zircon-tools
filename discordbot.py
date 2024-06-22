@@ -7,6 +7,7 @@ from datetime import datetime
 import config
 import consts.constants as constants
 import consts.SysMsg as SysMsg
+import consts.CustomIDs as CIDs
 import make_embed
 import models.Mining as Mining
 import models.Users as Users
@@ -45,12 +46,12 @@ async def send_announce():
     button_mine = discord.ui.Button(
         label="採掘",
         style=discord.ButtonStyle.primary,
-        custom_id="mining_zircon")
     # 自分の採掘量表示ボタン
     button_sum_self = discord.ui.Button(
         label="あなたの採掘量",
+        custom_id=CIDs.MINING_ZIRCON
         style=discord.ButtonStyle.secondary,
-        custom_id="sum_self"
+        custom_id=CIDs.SELF_STATS
     )
     # 国内の採掘総量表示ボタン
     button_total = discord.ui.Button(
@@ -62,7 +63,7 @@ async def send_announce():
     button_rank_role = discord.ui.Button(
         label="国内ランキング",
         style=discord.ButtonStyle.success,
-        custom_id="rank_user"
+        custom_id=CIDs.COUNTRY_STATS
     )
     view = discord.ui.View()
     view.add_item(button_mine)
@@ -220,16 +221,16 @@ async def on_interaction(interaction: discord.Interaction):
     try:
         if interaction.data['component_type'] == 2:
             custom_id = interaction.data['custom_id']
-            if custom_id == "mining_zircon":
+            if custom_id == CIDs.MINING_ZIRCON:
                 await mining_zircon(interaction)
-            elif custom_id == "total_single":
                 await get_stats(interaction, "single")
-            elif custom_id == "sum_self":
                 await get_stats(interaction, "self")
             elif custom_id == "rank_user":
                 await get_rank(interaction, "user_role")
             elif custom_id == "rank_country":
                 await get_rank(interaction, "country_all")
+            elif custom_id == CIDs.COUNTRY_STATS:
+            elif custom_id == CIDs.SELF_STATS:
             elif custom_id == "rank_csv":
                 await output_rank_csv(interaction)
             elif custom_id == "mine_status":
