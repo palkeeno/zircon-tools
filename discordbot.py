@@ -46,30 +46,24 @@ async def send_announce():
     button_mine = discord.ui.Button(
         label="採掘",
         style=discord.ButtonStyle.primary,
-    # 自分の採掘量表示ボタン
-    button_sum_self = discord.ui.Button(
-        label="あなたの採掘量",
         custom_id=CIDs.MINING_ZIRCON
+    )
+    # 自分の統計データ表示ボタン
+    button_self_stats = discord.ui.Button(
+        label="セルフ統計",
         style=discord.ButtonStyle.secondary,
         custom_id=CIDs.SELF_STATS
     )
     # 国内の採掘総量表示ボタン
     button_total = discord.ui.Button(
-        label="国内合計",
+        label="国内サマリ",
         style=discord.ButtonStyle.secondary,
-        custom_id="total_single"
-    )
-    # 国ごとにユーザの採掘量ランキングを表示（各10位まで＋自分の順位）
-    button_rank_role = discord.ui.Button(
-        label="国内ランキング",
-        style=discord.ButtonStyle.success,
         custom_id=CIDs.COUNTRY_STATS
     )
     view = discord.ui.View()
     view.add_item(button_mine)
-    view.add_item(button_sum_self)
+    view.add_item(button_self_stats)
     view.add_item(button_total)
-    view.add_item(button_rank_role)
 
     channel = client.get_channel(config.CHID_MINING)
     await channel.send(content=text, view=view)
@@ -88,13 +82,17 @@ async def mining_zircon(interaction: discord.Interaction):
         if bool(ures[3]) : # ures[3]=done_flag
             await interaction.response.send_message(content=SysMsg.ONCE_MINING, ephemeral=True)
             return
-    # 採掘結果を出す
+    # 採掘ガチャ
     result = util.gacha(random.random(), config.PROBABILITY)
-    embed = make_embed.mining(country, result, interaction.user, ures[2])
-    isExcellent = (result['id'] == 0) # 採掘結果がエクセレントかどうか判定
+    # 採掘結果がエクセレントかどうか判定
+    isExcellent = (result['id'] == 0)
     # 採掘結果をDBに保存して、メッセージを送信
     await Mining.upsert(interaction.user.id, country['role'], result['zirnum'], isExcellent)
     await Users.upsert(interaction.user.id, result['zirnum'], isExcellent)
+    
+    # TODO:結果出力embedにガチャ演出を入れる（優先度：中）
+    ures = await Mining.get_user_single(interaction.user.id, country['role'])
+    embed = make_embed.mining(result, interaction.user, ures[2])
     await interaction.response.send_message(embed=embed, ephemeral=True)
     # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
     if isExcellent:
@@ -102,43 +100,71 @@ async def mining_zircon(interaction: discord.Interaction):
         channel = client.get_channel(country['chid'])
         await channel.send(embed=exc_embed)
 
-# 採掘量を表示するアクション
-### args = self :現在の所属国での自分の採掘量
-### args = single :現在の所属国の全体採掘量
-async def get_stats(interaction: discord.Interaction, arg:str=""):
+# 自身の統計量（採掘数、採掘回数、Ex数、自身のRank）を表示するアクション
+async def get_stats_self(interaction: discord.Interaction):
     country = util.get_country(interaction.user)
-    # 引数によってとる内容を出し分け、結果がNoneの場合は無視
-    if arg == "self":
-        result = await Mining.get_user_single(interaction.user.id, country['role'])
-        if result == None:
-            return
-        embed = make_embed.stats_self(result, interaction.user)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-    elif arg == "single":
-        result = await Mining.get_country_single(country['role'])
-        if result == None:
-            result = (country['role'], 0)
-        embed = make_embed.stats_role(result, country)
-        await interaction.response.send_message(file=country['img'], embed=embed, ephemeral=True)
+    # 基本採掘情報を取得
+    result_mining = await Mining.get_user_single(interaction.user.id, country['role'])
+    result_lifetime = await Users.get_single(interaction.user.id)
+    if result_lifetime == None:
         await interaction.response.send_message(SysMsg.DATA_NOT_FOUND, ephemeral=True)
+        return
+    elif result_mining == None:
+        result_mining = [int(interaction.user.id), country['id'], 0, 0, 0, 0]
+    # 自分のランクを取得
+    rank_list = await Mining.get_rank_user_country(country['role'])
+    res_self = [r for r in rank_list if r[1] == interaction.user.id]
+    rank_self = res_self[0][0]
+    # embed作成して返信
+    embed = make_embed.stats_self(result_mining, result_lifetime, interaction.user, rank_self)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# 管理ビュー（運営向け）
+# 所属国の統計量（採掘数、採掘回数、Ex数、ランキングTop10）を表示するアクション
+# TODO: ランクの取得、生涯統計の取得、Embedの更新
+async def get_stats_country(interaction: discord.Interaction):
+    country = util.get_country(interaction.user)
+    # 国統計データを取得
+    result_country = await Mining.get_country_single(country['role'])
+    if result_country == None:
+        result_country = (country['role'], 0)
+    
+    # ランク情報の取得
+    result_rank = await Mining.get_rank_user_country(country['role'])
+    # 自分の順位を取得
+    res_self = [r for r in result_rank if r[1] == interaction.user.id]
+    rank_self = None
+    try:
+        rank_self = res_self[0][0]
+    except IndexError:
+        rank_self = 0
+    # TOP10を取得
+    for index, item in enumerate(result_rank):
+        user = interaction.guild.get_member(item[1])
+        result_rank[index][1] = user.display_name if user != None else "None"
+        # result_rank[[user_mention1, zirnum1,...], [user_mention2, zirnum2,...],...]
+
+    embed = make_embed.stats_country(result_country, country, result_rank, rank_self)
+    await interaction.response.send_message(file=country['img'], embed=embed, ephemeral=True)
+
+### 以下は運営コマンド
+
+# 運営向け管理ビュー
 async def send_view_to_manage(channel):
     # 国対抗ランキング表示ボタン
     button_rank_country = discord.ui.Button(
-        label="国対抗ランキング表示",
+        label="国採掘量ランク",
         style=discord.ButtonStyle.secondary,
-        custom_id="rank_country"
+        custom_id="rank_countries"
     )
     # 全ユーザランキングCSV出力ボタン
     button_rank_csv = discord.ui.Button(
-        label="ランキングCSV出力",
+        label="ユーザ統計CSV",
         style=discord.ButtonStyle.secondary,
         custom_id="rank_csv"
     )
     # 鉱山の営業ステータス確認
     button_mine_status = discord.ui.Button(
-        label="鉱山の営業状況",
+        label="鉱山の運営",
         style=discord.ButtonStyle.gray,
         custom_id="mine_status"
     )
@@ -148,34 +174,14 @@ async def send_view_to_manage(channel):
     view.add_item(button_mine_status)
     await channel.send(view=view)
 
-# 採掘量ランキングを取得する
-### args = user_role:ユーザの国ごとranking(ユーザコマンド)
-### args = country_all:国ごとのranking(運営コマンド)
-async def get_rank(interaction: discord.Interaction, args=""):
-    now = datetime.now()
-    if args == "user_role":
-        country = util.get_country(interaction.user)
-        result = await Mining.get_rank_user_country(country['role'])
-        # 自分の順位を取得
-        res_self = [r for r in result if r[1] == interaction.user.id]
-        rank_self = None
-        try:
-            rank_self = res_self[0][0]
-        except IndexError:
-            rank_self = 0
-        # TOP10を取得
-        for index, item in enumerate(result):
-            user = interaction.guild.get_member(item[1])
-            result[index][1] = user.display_name if user != None else "None" # [0]=rank, [1]=user_name, [2]=zirnum
-        embed = make_embed.rank_role(result, rank_self, country['name'], interaction.user)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-    elif args == "country_all":
-        result = await Mining.get_country_each()
-        result = sorted(result, key=lambda x: x[1], reverse=True) # zirnum数の降順に並び替え
-        for index, item in enumerate(result):
-            result[index][0] = util.get_country_by_roleid(item[0])
-        embed = make_embed.rank_country(result)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+# 国ごとの採掘量ランキングを取得する
+async def get_rank_countries(interaction: discord.Interaction):
+    result = await Mining.get_country_each()
+    result = sorted(result, key=lambda x: x[1], reverse=True) # zirnum数の降順に並び替え
+    for index, item in enumerate(result):
+        result[index][0] = util.get_country_by_roleid(item[0])
+    embed = make_embed.rank_country(result)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # 全ユーザのランキングをcsv出力する（運営コマンド）
 async def output_rank_csv(interaction: discord.Interaction):
@@ -223,14 +229,12 @@ async def on_interaction(interaction: discord.Interaction):
             custom_id = interaction.data['custom_id']
             if custom_id == CIDs.MINING_ZIRCON:
                 await mining_zircon(interaction)
-                await get_stats(interaction, "single")
-                await get_stats(interaction, "self")
-            elif custom_id == "rank_user":
-                await get_rank(interaction, "user_role")
-            elif custom_id == "rank_country":
-                await get_rank(interaction, "country_all")
             elif custom_id == CIDs.COUNTRY_STATS:
+                await get_stats_country(interaction)
             elif custom_id == CIDs.SELF_STATS:
+                await get_stats_self(interaction)
+            elif custom_id == "rank_countries":
+                await get_rank_countries(interaction)
             elif custom_id == "rank_csv":
                 await output_rank_csv(interaction)
             elif custom_id == "mine_status":

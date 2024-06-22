@@ -2,7 +2,7 @@ import discord
 from util import ordinal
 
 # 採掘結果のembed
-def mining(country, result, usr, total):
+def mining(result, usr, total):
     embed = discord.Embed(
         title="",
         description="",
@@ -10,13 +10,13 @@ def mining(country, result, usr, total):
     )
     embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
     embed.add_field(
-        name=f"採掘結果 :pick: : {result['msg']}", 
-        value=f"{country['name']} {country['stmp']} : + **{result['zirnum']}** :gem:", 
+        name=f":pick: :sparkles: {result['msg']}! **{result['zirnum']}** :gem: 掘れた！", 
+        value=f"", 
         inline=False
     )
     embed.add_field(
         name=f"",
-        value=f"これまでの採掘数 **{result['zirnum']+total}** :gem:",
+        value=f"これまでの採掘数 **{total}** :gem:",
         inline=False
     )
     return embed
@@ -32,58 +32,63 @@ def excellent(usr):
 
     return embed
 
-# 1国分の採掘合計embed
-def stats_role(result, country):
+# 指定国の統計データembed(ジェム数、採掘回数、自分のランク、Top10)
+def stats_country(res_country, country, res_rank, rank_self):
+    rank = ordinal(rank_self) if rank_self != 0 else 'None'
     embed = discord.Embed(
-        title=f"{country['name']}国",
+        title=f"{country['name']}国 サマリ",
         description="",
         color=0x0000ff
     )
     embed.set_thumbnail(url=f"attachment://{country['name']}.jpg")
+    # 統計データ表示
     embed.add_field(
-        name="総採掘数 :gem:", value=f"{int(result[1])}", inline=True
+        name=f"""
+ジルコン : {int(res_country[1])} :gem:
+採掘回数 : {int(res_country[2])} :pick:
+        """,
+        value=f"",
+        inline=False
     )
+
+    # ランキング表示
     embed.add_field(
-        name="参加回数 :pick:", value=f"{int(result[2])}", inline=True
+        name=f"ランキングTOP10",
+        value=f"Your Rank: {rank}",
+        inline=False
+    )
+    # res_rank[[user_mention1, zirnum1,...], [user_mention2, zirnum2,...],...]
+    top10List = []
+    for index in range(min(10, len(res_rank))):
+        top10List.append(f"**{res_rank[index][0]}.** `{res_rank[index][1]}` • :gem: {res_rank[index][2]}")
+    top10Str = "\n\r".join(top10List)
+
+    embed.add_field(
+        name="",
+        value=f"{top10Str}",
+        inline=False
     )
     return embed
 
-# 自分の採掘合計embed
-def stats_self(result, usr):
+# 自分の統計データembed(ジェム数、採掘回数、Ex数、国内順位)
+def stats_self(result_mining, result_lifetime, usr, rank_self):
+    rank = ordinal(rank_self) if rank_self != 0 else 'None'
     embed = discord.Embed(
         title="",
         description="",
         color=0x0000ff
     )
-    embed.set_author(name=f"{usr.display_name}", icon_url=usr.display_avatar.url)
+    embed.set_author(name=f"{usr.display_name} 採掘データ", icon_url=usr.display_avatar.url)
 
     embed.add_field(
-        name="採掘量 :gem:", value=f"{int(result[2])}", inline=True
+        name=f"""
+ジルコン : {int(result_mining[2])} :gem: （累積 {int(result_lifetime[2])}）
+採掘回数 : {int(result_mining[4])} :pick: （累積 {int(result_lifetime[3])}）
+Excellent : {int(result_mining[5])} :tada: （累積 {int(result_lifetime[4])}）
+        """,
+        value=f"国内順位 {rank}",
+        inline=False
     )
-    embed.add_field(
-        name="採掘回数 :pick:", value=f"{int(result[4])}", inline=True
-    )
-    embed.add_field(
-        name="Excellent回数 :tada:", value=f"{int(result[5])}", inline=True
-    )
-    return embed
-
-# ユーザーランキングの表示embed
-def rank_role(result, rank_self, cName, usr):
-    rank = ordinal(rank_self) if rank_self != 0 else 'None'
-    embed = discord.Embed(
-        title=f"{cName}国内 ランキングTOP10",
-        description=f"Your Rank: {rank}",
-        color=0x00ffff
-    )
-    embed.set_author(name=f"{usr.display_name}", icon_url=usr.display_avatar.url)
-    # result[[user_mention1, zirnum1,...], [user_mention2, zirnum2,...],...]
-    for index in range(min(10, len(result))):
-        embed.add_field(
-            name="",
-            value=f"**{result[index][0]}.** `{result[index][1]}` • :gem: {result[index][2]}",
-            inline=False
-        )
     return embed
 
 # 国対抗ランキングのembed
