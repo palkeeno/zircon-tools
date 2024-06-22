@@ -6,7 +6,7 @@ from datetime import datetime
 # made for this prj
 import config
 import consts.constants as constants
-import consts.msg as msg
+import consts.SysMsg as SysMsg
 import make_embed
 import models.Mining as Mining
 import models.Users as Users
@@ -40,7 +40,7 @@ async def check_announce():
 
 # 採掘アナウンスを送信
 async def send_announce():
-    text = msg.LETS_MINING
+    text = SysMsg.LETS_MINING
     # 採掘ボタン
     button_mine = discord.ui.Button(
         label="採掘",
@@ -78,14 +78,14 @@ async def send_announce():
 # ジルコン採掘アクション
 async def mining_zircon(interaction: discord.Interaction):
     if config.MINE_OPEN == False:
-        await interaction.response.send_message(content=msg.MINE_CLOSED, ephemeral=True)
+        await interaction.response.send_message(content=SysMsg.MINE_CLOSED, ephemeral=True)
         return
     country = util.get_country(interaction.user)
     # DBのレコードを見て採掘済みかチェック
     ures = await Mining.get_user_single(interaction.user.id, country['role'])
     if ures != None:
         if bool(ures[3]) : # ures[3]=done_flag
-            await interaction.response.send_message(content=msg.ONCE_MINING, ephemeral=True)
+            await interaction.response.send_message(content=SysMsg.ONCE_MINING, ephemeral=True)
             return
     # 採掘結果を出す
     result = util.gacha(random.random(), config.PROBABILITY)
@@ -119,7 +119,7 @@ async def get_stats(interaction: discord.Interaction, arg:str=""):
             result = (country['role'], 0)
         embed = make_embed.stats_role(result, country)
         await interaction.response.send_message(file=country['img'], embed=embed, ephemeral=True)
-        await interaction.response.send_message(msg.DATA_NOT_FOUND, ephemeral=True)
+        await interaction.response.send_message(SysMsg.DATA_NOT_FOUND, ephemeral=True)
 
 # 管理ビュー（運営向け）
 async def send_view_to_manage(channel):
@@ -247,11 +247,11 @@ async def on_message(message):
     if message.content == config.DEBUG_CMD:
         # announce manualy
         await send_announce()
-        await message.reply(content=msg.MANUAL_ANNOUNCE)
+        await message.reply(content=SysMsg.MANUAL_ANNOUNCE)
     if message.content == config.RESET_CMD:
         # reset mining database
         await Mining.reset_db()
-        await message.reply(content=msg.RESET_DB)
+        await message.reply(content=SysMsg.RESET_DB)
     if message.content == config.MNG_CMD:
         # view, rank_role, rank_all
         await send_view_to_manage(message.channel)
@@ -266,9 +266,9 @@ async def on_message(message):
         args = message.content.split() # [1]=message
         if len(args) < 2:
             return
-        ch_msg = client.get_channel(config.CHID_MINING)
-        msg = " ".join(args[1:])
-        await ch_msg.send(content=msg)
+        ch_mining = client.get_channel(config.CHID_MINING)
+        announce_msgs = " ".join(args[1:])
+        await ch_mining.send(content=announce_msgs)
     if message.content == config.START_CMD:
         config.MINE_OPEN = True
     if message.content == config.STOP_CMD:
