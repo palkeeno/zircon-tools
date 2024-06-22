@@ -1,0 +1,7 @@
+LETS_MINING = "今日も元気に採掘しましょう！ :gem:"
+ONCE_MINING = "採掘は完了しています！ 採掘は毎日0時と12時にできるよ :pick:"
+COUNTRY_ROLE = "どこか一つの国に所属してからまた来てね！"
+MINE_CLOSED = "現在採掘所は営業を停止しております。再開されたらまたお願いします :pick:"
+MANUAL_ANNOUNCE = "アナウンスを発動しました"
+RESET_DB = "データベースをリセットしました"
+DATA_NOT_FOUND = "Error 003: Data not found"
