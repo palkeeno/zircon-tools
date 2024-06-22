@@ -7,8 +7,11 @@ from consts.constants import LONG_DT_FORMAT
 import util
 
 # 国を無視した個人の採掘累計のテーブル作成
-### lt_totalは今後のための構え
+### current_total: 現在のzirnum合計（消費する可能性を考慮）
+### lifetime_total: 生涯の合計zirnum（消費してもここからは減らさない）
+### m_cnt, ex_cnt: 生涯の採掘回数合計、EX回数合計（消費しないのでlt）
 async def create_db():
+    isNew = False
     try:
         with sqlite3.connect(DB_USERS) as connection:
             cursor = connection.cursor()
@@ -17,17 +20,43 @@ async def create_db():
                 CREATE TABLE IF NOT EXISTS USERS(
                     id INTEGER primary key autoincrement,
                     userid INTEGER,
-                    zirnum INTEGER,
+                    curr_total INTEGER,
                     lt_total INTEGER,
                     m_cnt INTEGER,
                     ex_cnt INTEGER,
                     updated_at TEXT
                 )
             """)
+            # 新規作成かどうか判定
+            cursor.execute("""
+                SELECT * FROM USERS WHERE userid = 1
+            """)
+            isNew = (cursor.fetchone() == None)
     except sqlite3.Error as e:
         print('DB-USERS CREATION ERROR: ', e)
     finally:
-        connection.close() 
+        connection.close()
+    
+    # データベースを新規作成する場合、国ユーザを初期作成
+    if isNew:
+        init_country_record()
+
+# 国ユーザを初期で作成する
+def init_country_record():
+    try:
+        with sqlite3.connect(DB_USERS) as connection:
+            cursor = connection.cursor()
+            now = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
+            for country in COUNTRIES:
+                cursor.execute("""
+                    INSERT INTO USERS
+                        (userid, curr_total, lt_total, m_cnt, ex_cnt, updated_at)
+                        VALUES(?, 0, 0, 0, 0, ?)
+                """, (country['id'], now))
+    except sqlite3.Error as e:
+        print('DB-USERS INITIALIZE ERROR: ', e)
+    finally:
+        connection.close()
 
 # ユーザテーブルの中身をすべてクリア
 async def reset_db():
@@ -66,7 +95,7 @@ async def get_single(userid):
         with sqlite3.connect(DB_USERS) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT userid, zirnum, lt_total, m_cnt, ex_cnt
+                SELECT userid, curr_total, lt_total, m_cnt, ex_cnt
                 FROM USERS
                 WHERE userid = ?
             """,
@@ -76,58 +105,40 @@ async def get_single(userid):
         print('DB-USERS GET_SINGLE ERROR: ', e)
     finally:
         connection.close()
-    # [0]=userid, [1]=zirnum, [2]=lifetime total, [3]=m_cnt, [4]=ex_cnt
+    # [0]=userid, [1]=current total, [2]=lifetime total, [3]=m_cnt, [4]=ex_cnt
     return result
 
-# 全ユーザの現在の蓄積数ランキングをすべて取得する
-async def get_rank_current():
+# 全ユーザの現在／生涯蓄積数ランキングをすべて取得する
+async def get_rank(args):
     result = None
     try:
         with sqlite3.connect(DB_USERS) as connection:
             cursor = connection.cursor()
-            cursor.execute("""
-                SELECT userid, zirnum, m_cnt, ex_cnt
-                FROM USERS
-                ORDER BY zirnum DESC
-            """)
+            # currentなら現在蓄積数ランク
+            if args == "current":
+                cursor.execute("""
+                    SELECT userid, curr_total, m_cnt, ex_cnt
+                    FROM USERS
+                    ORDER BY curr_total DESC
+                """)
+            # lifetimeなら生涯蓄積数ランク
+            elif args == "lifetime":
+                cursor.execute("""
+                    SELECT userid, lt_total, m_cnt, ex_cnt
+                    FROM USERS
+                    ORDER BY lt_total DESC
+                """)
             result = cursor.fetchall()
     except sqlite3.Error as e:
-        print('DB GET_RANK_CURRENT ERROR: ', e)
+        print('DB GET_RANK ERROR: ', e)
     finally:
         connection.close()
-    # [N][0]=userid, [N][1]=zirnum, [N][2]=m_cnt, [N][3]=ex_cnt order by zirunm
+    # [N][0]=userid, [N][1]=current/lifetime total, [N][2]=m_cnt, [N][3]=ex_cnt
     result_list = [[0]*6 for i in range(len(result))]
     for index, res in enumerate(result):
         result_list[index][0] = int(index + 1) # rank
         result_list[index][1] = res[0] # userid
-        result_list[index][2] = int(res[1]) # zirnum
-        result_list[index][3] = int(res[2]) # mining count
-        result_list[index][4] = int(res[3]) # excellent count
-        result_list[index][5] = "" # ユーザmentionの予約地
-    return result_list
-
-# 全ユーザの生涯の蓄積数ランキングをすべて取得する
-async def get_rank_lifetime():
-    result = None
-    try:
-        with sqlite3.connect(DB_USERS) as connection:
-            cursor = connection.cursor()
-            cursor.execute("""
-                SELECT userid, lt_total, m_cnt, ex_cnt
-                FROM USERS
-                ORDER BY lt_total DESC
-            """)
-            result = cursor.fetchall()
-    except sqlite3.Error as e:
-        print('DB GET_RANK_LIFETIME ERROR: ', e)
-    finally:
-        connection.close()
-    # [N][0]=userid, [N][1]=lt_total, [N][2]=m_cnt, [N][3]=ex_cnt order by zirunm
-    result_list = [[0]*7 for i in range(len(result))]
-    for index, res in enumerate(result):
-        result_list[index][0] = int(index + 1) # rank
-        result_list[index][1] = res[0] # userid
-        result_list[index][2] = int(res[1]) # lifetime total zirnum
+        result_list[index][2] = int(res[1]) # current/lifetime total
         result_list[index][3] = int(res[2]) # mining count
         result_list[index][4] = int(res[3]) # excellent count
         result_list[index][5] = "" # ユーザmentionの予約地
@@ -143,33 +154,36 @@ async def upsert(userid, zirnum, isExcellent):
             cursor = connection.cursor()
             cursor.execute("""
                 SELECT * FROM USERS WHERE userid = ?
-            """, (userid))
+            """, (userid, ))
             exst_record = cursor.fetchone()
             
             if exst_record:
                 # レコードが存在する場合はをUPDATE
-                updated_zirnum = exst_record[3] + zirnum
+                updated_curr = exst_record[2] + zirnum
+                updated_lt = exst_record[3] + zirnum
                 updated_cnt = exst_record[4] + 1
                 updated_ex = exst_record[5] + isExcellent
                 cursor.execute("""
                 UPDATE USERS SET
-                    zirnum = ?,
+                    curr_total = ?,
+                    lt_total = ?,
                     m_cnt = ?,
                     ex_cnt = ?,
                     updated_at = ?
                 WHERE
                     userid = ?
                 """,
-                (updated_zirnum, updated_cnt, updated_ex, dt, userid))
+                (updated_curr, updated_lt, updated_cnt, updated_ex, dt, userid))
             else:
                 # レコードが存在しない場合はINSERT
                 cursor.execute("""
                     INSERT INTO USERS
-                        (userid, zirnum, m_cnt, ex_cnt, updated_at)
-                        VALUES(?, ?, 1, ?, ?)
+                        (userid, curr_total, lt_total, m_cnt, ex_cnt, updated_at)
+                        VALUES(?, ?, ?, 1, ?, ?)
                 """,
-                (userid, zirnum, isExcellent, dt))
+                (userid, zirnum, zirnum, isExcellent, dt))
     except sqlite3.Error as e:
         print('DB-USERS UPSERT ERROR: ', e)
+        print('userid: ', userid)
     finally:
         connection.close()
