@@ -2,8 +2,8 @@ import sqlite3
 import datetime
 from config import DB_MINING
 from config import COUNTRIES
-from constants import JST
-from constants import LONG_DT_FORMAT
+from consts.constants import JST
+from consts.constants import LONG_DT_FORMAT
 import util
 
 # 採掘結果のテーブル作成

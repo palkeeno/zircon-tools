@@ -31,7 +31,7 @@ async def on_ready():
 @tasks.loop(seconds=60, reconnect=True)
 async def check_announce():
     now = datetime.now(constants.JST)
-    # 鉱山オープンフラグがFalseなら鉱山がストップしているのでアナウンスが流れない
+    # 鉱山オープンフラグがFalseならアナウンスが流れない
     if config.MINE_OPEN == False:
         return
     if (now.hour in config.ANN_HOUR) and (now.minute in config.ANN_MINUTE):
@@ -245,7 +245,7 @@ async def on_message(message):
     if message.channel != client.get_channel(config.MCH):
         return
     if message.content == config.DEBUG_CMD:
-        # announce yourself
+        # announce manualy
         await send_announce()
         await message.reply(content=msg.MANUAL_ANNOUNCE)
     if message.content == config.RESET_CMD:
