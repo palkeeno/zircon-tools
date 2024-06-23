@@ -119,8 +119,7 @@ async def get_stats_self(interaction: discord.Interaction):
     embed = make_embed.stats_self(result_mining, result_lifetime, interaction.user, rank_self)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# 所属国の統計量（採掘数、採掘回数、Ex数、ランキングTop10）を表示するアクション
-# TODO: ランクの取得、生涯統計の取得、Embedの更新
+# 所属国の統計量（採掘数、採掘回数、ランキングTop10）を表示するアクション
 async def get_stats_country(interaction: discord.Interaction):
     country = util.get_country(interaction.user)
     # 国統計データを取得
@@ -225,6 +224,7 @@ async def add_zircon(user_mention, zircon_num, message):
 @client.event
 async def on_interaction(interaction: discord.Interaction):
     try:
+        # component_type=2 : Button
         if interaction.data['component_type'] == 2:
             custom_id = interaction.data['custom_id']
             if custom_id == CIDs.MINING_ZIRCON:
