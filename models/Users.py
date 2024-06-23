@@ -144,9 +144,8 @@ async def get_rank(args):
         result_list[index][5] = "" # ユーザmentionの予約地
     return result_list
     
-# 採掘結果をUPSERT
-# TODO: add_flag を追加してaddの時はupsert項目を変えるように修正（優先度：低）
-async def upsert(userid, zirnum, isExcellent):
+# 採掘結果をUPSERT(運営addの場合はisMining=False)
+async def upsert(userid, zirnum, isExcellent = False, isMining = True):
     dt = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
     # ユーザテーブルにUPSERT
     try:
@@ -160,8 +159,8 @@ async def upsert(userid, zirnum, isExcellent):
             if exst_record:
                 # レコードが存在する場合はをUPDATE
                 updated_curr = exst_record[2] + zirnum
-                updated_lt = exst_record[3] + zirnum
-                updated_cnt = exst_record[4] + 1
+                updated_lt = exst_record[3] + (zirnum if zirnum > 0 else 0)
+                updated_cnt = exst_record[4] + isMining
                 updated_ex = exst_record[5] + isExcellent
                 cursor.execute("""
                 UPDATE USERS SET

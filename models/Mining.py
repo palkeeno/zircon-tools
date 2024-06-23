@@ -209,9 +209,8 @@ async def get_country_single(roleid):
     # [0]=roleid, [1]=total of zirnum, [2]=total of mining count
     return result
 
-# 採掘結果をUPSERT
-# TODO: add_flag を追加してaddの時はupsert項目を変えるように修正（優先度：低）
-async def upsert(userid, roleid, zirnum, isExcellent):
+# 採掘結果をUPSERT(運営addの場合はisMining=False)
+async def upsert(userid, roleid, zirnum, isExcellent = False, isMining = True):
     dt = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
     # 採掘テーブルにUPSERT
     try:
@@ -225,57 +224,30 @@ async def upsert(userid, roleid, zirnum, isExcellent):
             if exst_record:
                 # レコードが存在する場合はUPDATE
                 updated_zirnum = exst_record[3] + zirnum
-                updated_cnt = exst_record[4] + 1
+                updated_cnt = exst_record[4] + isMining
                 updated_ex = exst_record[5] + isExcellent
+                updated_done = isMining
                 cursor.execute("""
                 UPDATE MINING SET
                     zirnum = ?,
                     m_cnt = ?,
                     ex_cnt = ?,
-                    done_flag = 1,
+                    done_flag = ?,
                     updated_at = ?
                 WHERE
                     userid = ?
                     AND roleid = ?
                 """,
-                (updated_zirnum, updated_cnt, updated_ex, dt, userid, roleid))
+                (updated_zirnum, updated_cnt, updated_ex, updated_done, dt, userid, roleid))
             else:
                 # レコードが存在しない場合はINSERT
                 cursor.execute("""
                     INSERT INTO MINING
                         (userid, roleid, zirnum, m_cnt, ex_cnt, done_flag, updated_at)
-                        VALUES(?, ?, ?, 1, ?, 1, ?)
+                        VALUES(?, ?, ?, ?, ?, ?, ?)
                 """,
-                (userid, roleid, zirnum, isExcellent, dt))
+                (userid, roleid, zirnum, isMining, isExcellent, isMining, dt))
     except sqlite3.Error as e:
         print('DB-MINING UPSERT ERROR: ', e)
     finally:
         connection.close()
-
-# 採掘とは別にジルコンを追加
-async def add_zirnum(userid, roleid, zirnum):
-    dt = util.convertDt2Str(datetime.datetime.now(JST), LONG_DT_FORMAT)
-    try:
-        with sqlite3.connect(DB_MINING) as conn1:
-            cursor = conn1.cursor()
-            cursor.execute("""
-                SELECT * FROM MINING WHERE userid = ? AND roleid = ?
-            """, (userid, roleid))
-            exst_record = cursor.fetchone()
-            # レコードが存在する場合はzirnumをUPDATE
-            updated_zirnum = exst_record[3] + zirnum
-            cursor.execute("""
-            UPDATE MINING SET
-                zirnum = ?,
-                updated_at = ?
-            WHERE
-                userid = ?
-                AND roleid = ?
-            """,
-            (updated_zirnum, dt, userid, roleid))
-    except sqlite3.Error as e:
-        print('DB-MINING UPSERT ERROR: ', e)
-        print('userid: ', userid)
-    finally:
-        conn1.close()
-    

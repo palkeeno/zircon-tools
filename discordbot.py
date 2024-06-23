@@ -212,7 +212,8 @@ async def add_zircon(user_mention, zircon_num, message):
             target['country'] = util.get_country(message.guild.get_member(target['user_id']))['role']
         # ターゲットが存在すればジルコンを付与、そうでなければエラーメッセージ送信
         if target['user_id'] != None and target['country'] != None:
-            await Mining.add_zirnum(target['user_id'], target['country'], zircon_num)
+            await Mining.upsert(target['user_id'], target['country'], zircon_num, False, False)
+            await Users.upsert(target['user_id'], zircon_num, False, False)
             await message.reply(content=f"{user_mention}に{zircon_num} :gem: 付与しました")
         else: 
             await message.reply(content=f"ユーザ：{user_mention}は存在しません")
