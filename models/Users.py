@@ -3,7 +3,7 @@ import sqlite3
 
 import util
 from config import COUNTRIES, DB_USERS
-from consts.constants import JST, LONG_DT_FORMAT
+from consts.const import JST, LONG_DT_FORMAT
 
 
 # 国を無視した個人の採掘累計のテーブル作成

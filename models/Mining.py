@@ -3,7 +3,7 @@ import sqlite3
 
 import util
 from config import COUNTRIES, DB_MINING
-from consts.constants import JST, LONG_DT_FORMAT
+from consts.const import JST, LONG_DT_FORMAT
 
 
 # 採掘結果のテーブル作成
