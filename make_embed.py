@@ -51,7 +51,7 @@ def stats_country(res_country, country_name, res_rank, rank_self):
         top10List.append(
             f"**{res_rank[index][0]}.** `{res_rank[index][1]}` • :gem: {res_rank[index][2]}"
         )
-    top10Str = "\n\r".join(top10List)
+    top10Str = "\n".join(top10List)
 
     embed.add_field(name="", value=f"{top10Str}", inline=False)
     return embed
