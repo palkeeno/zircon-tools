@@ -255,7 +255,7 @@ async def add_zircon(user_mention, zircon_num, message):
             )
         else:
             await message.reply(content=f"ユーザ：{user_mention}は存在しません")
-    except:
+    except BaseException:
         await message.reply(content=f"ユーザ：{user_mention}は存在しません")
 
 
