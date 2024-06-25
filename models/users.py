@@ -183,6 +183,7 @@ async def upsert(userid, zirnum, isExcellent=False, isMining=True):
             exst_record = cursor.fetchone()
 
             if exst_record:
+                print("test1")
                 # レコードが存在する場合はをUPDATE
                 updated_curr = exst_record[2] + zirnum
                 updated_lt = exst_record[3] + (zirnum if zirnum > 0 else 0)
@@ -202,6 +203,7 @@ async def upsert(userid, zirnum, isExcellent=False, isMining=True):
                     (updated_curr, updated_lt, updated_cnt, updated_ex, dt, userid),
                 )
             else:
+                print("test2")
                 # レコードが存在しない場合はINSERT
                 cursor.execute(
                     """

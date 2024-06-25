@@ -9,10 +9,10 @@ from discord.ext import tasks
 import config
 import consts.const as const
 import consts.cids as cids
-import consts.SysMsg as SysMsg
+import consts.sysmsg as SysMsg
 import make_embed
-import models.Mining as mining
-import models.Users as users
+import models.mining as mining
+import models.users as users
 import util
 
 # init
