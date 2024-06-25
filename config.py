@@ -48,16 +48,10 @@ PROBABILITY = [
     {'id':2,    'msg':'Good',           'prob':1,       'zirnum':1}
 ]
 
-# imgs
-BRAVE_FLAG = discord.File(CWD+"/assets/Brave.jpg", filename="Brave.jpg")
-FREEDOM_FLAG = discord.File(CWD+"/assets/Freedom.jpg", filename="Freedom.jpg")
-GLORY_FLAG = discord.File(CWD+"/assets/Glory.jpg", filename="Glory.jpg")
-PEACEFUL_FLAG = discord.File(CWD+"/assets/Peaceful.jpg", filename="Peaceful.jpg")
-
 # country roles id
 COUNTRIES = [
-    {'id':1, 'role':B_ROLE, 'name':'Brave',    'chid':B_CHAT,    'stmp':B_EMOJI,   'img':BRAVE_FLAG}, # brave
-    {'id':2, 'role':F_ROLE, 'name':'Freedom',  'chid':F_CHAT,    'stmp':F_EMOJI,   'img':FREEDOM_FLAG}, # freedom
-    {'id':3, 'role':G_ROLE, 'name':'Glory',    'chid':G_CHAT,    'stmp':G_EMOJI,   'img':GLORY_FLAG}, # glory
-    {'id':4, 'role':P_ROLE, 'name':'Peaceful', 'chid':P_CHAT,    'stmp':P_EMOJI,   'img':PEACEFUL_FLAG}  # peaceful
+    {'id':1, 'role':B_ROLE, 'name':'Brave',    'chid':B_CHAT,    'stmp':B_EMOJI}, # brave
+    {'id':2, 'role':F_ROLE, 'name':'Freedom',  'chid':F_CHAT,    'stmp':F_EMOJI}, # freedom
+    {'id':3, 'role':G_ROLE, 'name':'Glory',    'chid':G_CHAT,    'stmp':G_EMOJI}, # glory
+    {'id':4, 'role':P_ROLE, 'name':'Peaceful', 'chid':P_CHAT,    'stmp':P_EMOJI}  # peaceful
 ]

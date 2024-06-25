@@ -125,7 +125,7 @@ async def get_stats_country(interaction: discord.Interaction):
     # 国統計データを取得
     result_country = await Mining.get_country_single(country['role'])
     if result_country == None:
-        result_country = (country['role'], 0)
+        result_country = (country['role'], 0, 0)
     
     # ランク情報の取得
     result_rank = await Mining.get_rank_user_country(country['role'])
@@ -142,8 +142,9 @@ async def get_stats_country(interaction: discord.Interaction):
         result_rank[index][1] = user.display_name if user != None else "None"
         # result_rank[[user_mention1, zirnum1,...], [user_mention2, zirnum2,...],...]
 
-    embed = make_embed.stats_country(result_country, country, result_rank, rank_self)
-    await interaction.response.send_message(file=country['img'], embed=embed, ephemeral=True)
+    flag_of_country = discord.File(fp=f"{config.CWD}/assets/{country['name']}.jpg", filename=f"{country['name']}.jpg")
+    embed = make_embed.stats_country(result_country, country['name'], result_rank, rank_self)
+    await interaction.response.send_message(file=flag_of_country, embed=embed, ephemeral=True)
 
 ### 以下は運営コマンド
 

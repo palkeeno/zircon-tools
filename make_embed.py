@@ -33,14 +33,14 @@ def excellent(usr):
     return embed
 
 # 指定国の統計データembed(ジェム数、採掘回数、自分のランク、Top10)
-def stats_country(res_country, country, res_rank, rank_self):
+def stats_country(res_country, country_name, res_rank, rank_self):
     rank = ordinal(rank_self) if rank_self != 0 else 'None'
     embed = discord.Embed(
-        title=f"{country['name']}国 サマリ",
+        title=f"{country_name}国 サマリ",
         description="",
         color=0x0000ff
     )
-    embed.set_thumbnail(url=f"attachment://{country['name']}.jpg")
+    embed.set_thumbnail(url=f"attachment://{country_name}.jpg")
     # 統計データ表示
     embed.add_field(
         name=f"""
