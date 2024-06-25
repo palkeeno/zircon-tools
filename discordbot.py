@@ -180,19 +180,19 @@ async def send_view_to_manage(channel):
     button_rank_country = discord.ui.Button(
         label="国採掘量ランク",
         style=discord.ButtonStyle.secondary,
-        custom_id="rank_countries",
+        custom_id=CIDs.RANK_COUNTRY,
     )
     # 全ユーザランキングCSV出力ボタン
     button_rank_csv = discord.ui.Button(
         label="ユーザ統計CSV",
         style=discord.ButtonStyle.secondary,
-        custom_id="rank_csv",
+        custom_id=CIDs.OUTPUT_RANK,
     )
     # 鉱山の営業ステータス確認
     button_mine_status = discord.ui.Button(
         label="鉱山の運営",
         style=discord.ButtonStyle.gray,
-        custom_id="mine_status",
+        custom_id=CIDs.MINE_STATUS,
     )
     view = discord.ui.View()
     view.add_item(button_rank_country)
@@ -272,11 +272,11 @@ async def on_interaction(interaction: discord.Interaction):
                 await get_stats_country(interaction)
             elif custom_id == CIDs.SELF_STATS:
                 await get_stats_self(interaction)
-            elif custom_id == "rank_countries":
+            elif custom_id == CIDs.RANK_COUNTRY:
                 await get_rank_countries(interaction)
-            elif custom_id == "rank_csv":
+            elif custom_id == CIDs.OUTPUT_RANK:
                 await output_rank_csv(interaction)
-            elif custom_id == "mine_status":
+            elif custom_id == CIDs.MINE_STATUS:
                 status = "OPEN" if config.MINE_OPEN else "CLOSE"
                 await interaction.response.send_message(content=status, ephemeral=False)
     except KeyError:
