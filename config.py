@@ -1,8 +1,6 @@
+import os
 from dotenv import load_dotenv
 load_dotenv()
-
-import os
-import discord
 
 #### Load Env ####
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
