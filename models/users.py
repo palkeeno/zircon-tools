@@ -3,7 +3,7 @@ import sqlite3
 
 import util
 from config import COUNTRIES, DB_USERS
-from consts.const import JST, LONG_DT_FORMAT
+from consts.const import CURRENT, JST, LIFETIME, LONG_DT_FORMAT
 
 
 # 国を無視した個人の採掘累計のテーブル作成
@@ -133,20 +133,22 @@ async def get_rank(args):
         with sqlite3.connect(DB_USERS) as connection:
             cursor = connection.cursor()
             # currentなら現在蓄積数ランク
-            if args == "current":
+            if args == CURRENT:
                 cursor.execute(
                     """
                     SELECT userid, curr_total, m_cnt, ex_cnt
                     FROM USERS
+                    WHERE userid not in (1,2,3,4)
                     ORDER BY curr_total DESC
                 """
                 )
             # lifetimeなら生涯蓄積数ランク
-            elif args == "lifetime":
+            elif args == LIFETIME:
                 cursor.execute(
                     """
                     SELECT userid, lt_total, m_cnt, ex_cnt
                     FROM USERS
+                    WHERE userid not in (1,2,3,4)
                     ORDER BY lt_total DESC
                 """
                 )
@@ -160,10 +162,10 @@ async def get_rank(args):
     for index, res in enumerate(result):
         result_list[index][0] = int(index + 1)  # rank
         result_list[index][1] = res[0]  # userid
-        result_list[index][2] = int(res[1])  # current/lifetime total
-        result_list[index][3] = int(res[2])  # mining count
-        result_list[index][4] = int(res[3])  # excellent count
-        result_list[index][5] = ""  # ユーザmentionの予約地
+        result_list[index][2] = ""  # ユーザmentionの予約地
+        result_list[index][3] = int(res[1])  # current/lifetime total
+        result_list[index][4] = int(res[2])  # mining count
+        result_list[index][5] = int(res[3])  # excellent count
     return result_list
 
 

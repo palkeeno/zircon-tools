@@ -7,8 +7,8 @@ from discord.ext import tasks
 
 # made for this prj
 import config
-import consts.const as const
 import consts.cids as cids
+import consts.const as const
 import consts.sysmsg as SysMsg
 import make_embed
 import models.mining as mining
@@ -216,16 +216,26 @@ async def get_rank_countries(interaction: discord.Interaction):
 # 全ユーザのランキングをcsv出力する
 async def output_rank_csv(interaction: discord.Interaction):
     dtStr = util.convertDt2Str(datetime.now(const.JST), const.SHORT_DT_FORMAT)
-    filename = const.CSV_FOLDER + "user-rank_" + dtStr + const.CSV
-    data = await mining.get_rank_user_overall()
-    for index, item in enumerate(data):
-        user = interaction.guild.get_member(item[1])
-        data[index][1] = user.display_name if user is not None else "None"
+    # 今回の採掘量ランクの出力
+    fname_now = const.CSV_FOLDER + "user-rank-now_" + dtStr + const.CSV
+    dat_mining = await mining.get_rank_user_overall()
+    for index, item in enumerate(dat_mining):
+        user = interaction.guild.get_member(item[1]) # メンションIDの取得
+        dat_mining[index][1] = user.display_name if user is not None else "None"
+        dat_mining[index][2] = user.mention if user is not None else "None"
         country = [c for c in config.COUNTRIES if c["role"] == item[3]]
-        data[index][3] = country[0]["name"]
-        data[index][6] = user.mention if user is not None else "None"
-    util.write_csv(filename, const.RANK_HEADER, data)
-    await interaction.response.send_message(file=discord.File(filename))
+        dat_mining[index][3] = country[0]["name"]
+    util.write_csv(fname_now, const.RANK_HEADER_NOW, dat_mining)
+
+    # 生涯の採掘量ランクの出力
+    fname_lt = const.CSV_FOLDER + "user-rank-lifetime_" + dtStr + const.CSV
+    dat_users = await users.get_rank(const.LIFETIME)
+    for index, item in enumerate(dat_users):
+        user = interaction.guild.get_member(item[1]) # メンションIDの取得
+        dat_users[index][1] = user.display_name if user is not None else "None"
+        dat_users[index][2] = user.mention if user is not None else "None"
+    util.write_csv(fname_lt, const.RANK_HEADER_LIFETIME, dat_users)
+    await interaction.response.send_message(files=[discord.File(fname_now), discord.File(fname_lt)])
 
 
 # zircon_numで指定した数だけ、指定したuserに付与

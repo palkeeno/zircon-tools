@@ -182,11 +182,11 @@ async def get_rank_user_overall():
     for index, res in enumerate(result):
         result_list[index][0] = int(index + 1)  # rank
         result_list[index][1] = res[0]  # userid
-        result_list[index][2] = int(res[1])  # zirnum
+        result_list[index][2] = ""  # ユーザmentionの予約地
         result_list[index][3] = res[2]  # roleid
-        result_list[index][4] = int(res[3])  # mining count
-        result_list[index][5] = int(res[4])  # excellent count
-        result_list[index][6] = ""  # ユーザmentionの予約地
+        result_list[index][4] = int(res[1])  # zirnum
+        result_list[index][5] = int(res[3])  # mining count
+        result_list[index][6] = int(res[4])  # excellent count
     return result_list
 
 
