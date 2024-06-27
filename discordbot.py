@@ -111,7 +111,11 @@ async def mining_zircon(interaction: discord.Interaction):
     if isExcellent:
         exc_embed = make_embed.excellent(interaction.user)
         channel = client.get_channel(country["chid"])
-        await channel.send(embed=exc_embed)
+        img_ex = discord.File(
+        fp=f"{config.CWD}/assets/ex_celebrate.png",
+        filename="ex_celebrate.png",
+        )
+        await channel.send(file=img_ex, embed=exc_embed)
 
 
 # 自身の統計量（採掘数、採掘回数、Ex数、自身のRank）を表示するアクション

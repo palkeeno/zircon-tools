@@ -22,7 +22,7 @@ def excellent(usr):
         title="Excellent採掘しました！ :gem::gem::gem:", description="", color=0x00FF00
     )
     embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
-
+    embed.set_thumbnail(url="attachment://ex_celebrate.png")
     return embed
 
 
