@@ -4,6 +4,7 @@ from datetime import datetime
 
 import discord
 from discord.ext import tasks
+import asyncio
 
 # made for this prj
 import config
@@ -103,21 +104,29 @@ async def mining_zircon(interaction: discord.Interaction):
     )
     await users.upsert(interaction.user.id, result["zirnum"], isExcellent)
 
-    # TODO:結果出力embedにガチャ演出を入れる（優先度：中）
+    await interaction.response.defer(thinking=True, ephemeral=True)
+
+    gif_mining = discord.File(
+        fp=f"./assets/{const.GIF_MINING}",
+        filename=f"{const.GIF_MINING}"
+    )
+    mining_msg = await interaction.followup.send(file=gif_mining, ephemeral=True)
+    await asyncio.sleep(2.5)
+
     img_mresult = discord.File(
         fp=f"{config.CWD}/assets/{result['msg']}.png",
         filename=f"{result['msg']}.png",
     )
     ures = await mining.get_user_single(interaction.user.id, country["role"])
     embed = make_embed.mining(result, interaction.user, ures[2])
-    await interaction.response.send_message(file=img_mresult, embed=embed, ephemeral=True)
+    await mining_msg.edit(embed=embed, attachments=[img_mresult])
     # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
     if isExcellent:
         exc_embed = make_embed.excellent(interaction.user)
         channel = client.get_channel(country["chid"])
         img_ex = discord.File(
-        fp=f"{config.CWD}/assets/ex_celebrate.png",
-        filename="ex_celebrate.png",
+        fp=f"{config.CWD}/assets/{const.EX_CELEB}",
+        filename=f"{const.EX_CELEB}",
         )
         await channel.send(file=img_ex, embed=exc_embed)
 

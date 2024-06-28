@@ -33,6 +33,10 @@ RANK_HEADER_LIFETIME = [
     "Excellent回数(累積)",
 ]
 
+# file path
+GIF_MINING = "mining25.gif"
+EX_CELEB = "ex_celebrate.png"
+
 # folder path
 CSV_FOLDER = CWD + "/csv/"
 
