@@ -1,10 +1,10 @@
+import asyncio
 import os
 import random
 from datetime import datetime
 
 import discord
 from discord.ext import tasks
-import asyncio
 
 # made for this prj
 import config
@@ -125,8 +125,8 @@ async def mining_zircon(interaction: discord.Interaction):
         exc_embed = make_embed.excellent(interaction.user)
         channel = client.get_channel(country["chid"])
         img_ex = discord.File(
-        fp=f"{config.CWD}/assets/{const.EX_CELEB}",
-        filename=f"{const.EX_CELEB}",
+            fp=f"{config.CWD}/assets/{const.EX_CELEB}",
+            filename=f"{const.EX_CELEB}",
         )
         await channel.send(file=img_ex, embed=exc_embed)
 
@@ -237,7 +237,7 @@ async def output_rank_csv(interaction: discord.Interaction):
     fname_now = const.CSV_FOLDER + "user-rank-now_" + dtStr + const.CSV
     dat_mining = await mining.get_rank_user_overall()
     for index, item in enumerate(dat_mining):
-        user = interaction.guild.get_member(item[1]) # メンションIDの取得
+        user = interaction.guild.get_member(item[1])  # メンションIDの取得
         dat_mining[index][1] = user.display_name if user is not None else "None"
         dat_mining[index][2] = user.mention if user is not None else "None"
         country = [c for c in config.COUNTRIES if c["role"] == item[3]]
@@ -248,11 +248,13 @@ async def output_rank_csv(interaction: discord.Interaction):
     fname_lt = const.CSV_FOLDER + "user-rank-lifetime_" + dtStr + const.CSV
     dat_users = await users.get_rank(const.LIFETIME)
     for index, item in enumerate(dat_users):
-        user = interaction.guild.get_member(item[1]) # メンションIDの取得
+        user = interaction.guild.get_member(item[1])  # メンションIDの取得
         dat_users[index][1] = user.display_name if user is not None else "None"
         dat_users[index][2] = user.mention if user is not None else "None"
     util.write_csv(fname_lt, const.RANK_HEADER_LIFETIME, dat_users)
-    await interaction.response.send_message(files=[discord.File(fname_now), discord.File(fname_lt)])
+    await interaction.response.send_message(
+        files=[discord.File(fname_now), discord.File(fname_lt)]
+    )
 
 
 # zircon_numで指定した数だけ、指定したuserに付与
