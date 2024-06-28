@@ -104,9 +104,13 @@ async def mining_zircon(interaction: discord.Interaction):
     await users.upsert(interaction.user.id, result["zirnum"], isExcellent)
 
     # TODO:結果出力embedにガチャ演出を入れる（優先度：中）
+    img_mresult = discord.File(
+        fp=f"{config.CWD}/assets/{result['msg']}.png",
+        filename=f"{result['msg']}.png",
+    )
     ures = await mining.get_user_single(interaction.user.id, country["role"])
     embed = make_embed.mining(result, interaction.user, ures[2])
-    await interaction.response.send_message(embed=embed, ephemeral=True)
+    await interaction.response.send_message(file=img_mresult, embed=embed, ephemeral=True)
     # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
     if isExcellent:
         exc_embed = make_embed.excellent(interaction.user)

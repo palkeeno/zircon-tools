@@ -9,10 +9,10 @@ def mining(result, usr, total):
     embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
     embed.add_field(
         name=f":pick: :sparkles: {result['msg']}! **{result['zirnum']}** :gem: 掘れた！",
-        value="",
+        value=f"これまでの採掘数 **{total}** :gem:",
         inline=False,
     )
-    embed.add_field(name="", value=f"これまでの採掘数 **{total}** :gem:", inline=False)
+    embed.set_image(url=f"attachment://{result['msg']}.png")
     return embed
 
 
