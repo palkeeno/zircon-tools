@@ -99,9 +99,7 @@ async def mining_zircon(interaction: discord.Interaction):
     # 採掘結果がエクセレントかどうか判定
     isExcellent = result["id"] == 0
     # 採掘結果をDBに保存して、メッセージを送信
-    await mining.upsert(
-        interaction.user.id, country["role"], result["zirnum"], isExcellent
-    )
+    await mining.upsert(interaction.user.id, country["role"], result["zirnum"], isExcellent)
     await users.upsert(interaction.user.id, result["zirnum"], isExcellent)
 
     await interaction.response.defer(thinking=True, ephemeral=True)
