@@ -104,16 +104,21 @@ async def mining_zircon(interaction: discord.Interaction):
 
     await interaction.response.defer(thinking=True, ephemeral=True)
 
+    # ガチャ演出のランダム化 random_performance_key, performance_num
+    rpk = random.randint(1,100)
+    pn_gif = int(rpk % 4)
+    # ガチャ演出の表示
     gif_mining = discord.File(
-        fp=f"./assets/{const.GIF_MINING}",
-        filename=f"{const.GIF_MINING}"
+        fp=f"./assets/mining{pn_gif}.gif",
+        filename=f"mining{pn_gif}.gif"
     )
     mining_msg = await interaction.followup.send(file=gif_mining, ephemeral=True)
-    await asyncio.sleep(2.5)
+    await asyncio.sleep(2.4)
 
+    pn_img = int(rpk % (result["id"] + 3))
     img_mresult = discord.File(
-        fp=f"{config.CWD}/assets/{result['msg']}.png",
-        filename=f"{result['msg']}.png",
+        fp=f"{config.CWD}/assets/{result['msg']}{pn_img}.png",
+        filename=f"{result['msg']}{pn_img}.png",
     )
     ures = await mining.get_user_single(interaction.user.id, country["role"])
     embed = make_embed.mining(result, interaction.user, ures[2])

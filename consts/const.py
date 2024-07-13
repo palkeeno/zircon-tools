@@ -34,7 +34,6 @@ RANK_HEADER_LIFETIME = [
 ]
 
 # file path
-GIF_MINING = "mining25.gif"
 EX_CELEB = "ex_celebrate.png"
 
 # folder path
