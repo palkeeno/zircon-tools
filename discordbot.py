@@ -108,21 +108,25 @@ async def mining_zircon(interaction: discord.Interaction):
     rpk = random.randint(1,100)
     pn_gif = int(rpk % 4)
     # ガチャ演出の表示
+    fn_gif=f"mining{pn_gif}.gif"
     gif_mining = discord.File(
-        fp=f"./assets/mining{pn_gif}.gif",
-        filename=f"mining{pn_gif}.gif"
+        fp=f"./assets/{fn_gif}",
+        filename=fn_gif
     )
-    mining_msg = await interaction.followup.send(file=gif_mining, ephemeral=True)
-    await asyncio.sleep(2.4)
+    em1 = make_embed.mining_performance(interaction.user, fn_gif)
+    mining_msg = await interaction.followup.send(embed=em1, file=gif_mining, ephemeral=True)
+    await asyncio.sleep(3)
 
     pn_img = int(rpk % (result["id"] + 3))
+    fn_img = f"{result['msg']}{pn_img}.png"
     img_mresult = discord.File(
-        fp=f"{config.CWD}/assets/{result['msg']}{pn_img}.png",
-        filename=f"{result['msg']}{pn_img}.png",
+        fp=f"{config.CWD}/assets/{fn_img}",
+        filename=fn_img,
     )
     ures = await mining.get_user_single(interaction.user.id, country["role"])
-    embed = make_embed.mining(result, interaction.user, ures[2])
-    await mining_msg.edit(embed=embed, attachments=[img_mresult])
+    em2 = make_embed.mining(result, interaction.user, ures[2], fn_img)
+    await mining_msg.delete()
+    await interaction.followup.send(embed=em2, file=img_mresult, ephemeral=True)
     # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
     if isExcellent:
         exc_embed = make_embed.excellent(interaction.user)

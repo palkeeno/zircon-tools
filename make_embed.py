@@ -4,15 +4,23 @@ from util import ordinal
 
 
 # 採掘結果のembed
-def mining(result, usr, total):
+def mining(result, user, total, filename):
     embed = discord.Embed(title="", description="", color=0x00FF00)
-    embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
+    embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
     embed.add_field(
         name=f":pick: :sparkles: {result['msg']}! **{result['zirnum']}** :gem: 掘れた！",
         value=f"これまでの採掘数 **{total}** :gem:",
         inline=False,
     )
-    embed.set_image(url=f"attachment://{result['msg']}.png")
+    embed.set_image(url=f"attachment://{filename}")
+    return embed
+
+
+# 採掘演出のembed (中味はgifのみ)
+def mining_performance(user, filename):
+    embed = discord.Embed(title="", description="", color=0x00FF00)
+    embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
+    embed.set_image(url=f"attachment://{filename}")
     return embed
 
 
