@@ -25,11 +25,11 @@ def mining_performance(user, filename):
 
 
 # 採掘結果Excellentを雑談チャネルに投稿するときのembed
-def excellent(usr):
+def excellent(user):
     embed = discord.Embed(
         title="Excellent採掘しました！ :gem::gem::gem:", description="", color=0x00FF00
     )
-    embed.set_author(name=usr.display_name, icon_url=usr.display_avatar.url)
+    embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
     embed.set_thumbnail(url="attachment://ex_celebrate.png")
     return embed
 
