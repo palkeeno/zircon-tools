@@ -295,6 +295,7 @@ async def add_zircon(user_mention, zircon_num, message):
         await message.reply(content=f"ユーザ：{user_mention}は存在しません")
 
 
+# TODO: mine_status で「営業状況：OPEN/CLOSE [OPEN][CLOSE]」→eph「OPEN/CLOSEしますか？ [YES][NO]」→「OPEN/CLOSEしました」となるUIを作る（優先度：中）
 # 全イベントの監視
 @client.event
 async def on_interaction(interaction: discord.Interaction):
@@ -319,6 +320,9 @@ async def on_interaction(interaction: discord.Interaction):
         pass
 
 
+# TODO: 採掘可能時間の変更コマンドをつくる（優先度：低）→ 鉱山運営コマンドの中に入れる
+# TODO: STOP/START後に営業状況を自動でメッセージ出すようにする（優先度：中）
+# TODO: resetもボタンUIに入れる「データベースをリセットしますか？[やめる][採掘DB][すべてのDB]」→「本当に採掘/すべてのDBをリセットしますか？[YES][NO]」→「採掘/すべてのDBをリセットしました」
 @client.event
 async def on_message(message):
     if message.author.bot:

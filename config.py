@@ -38,6 +38,7 @@ STOP_CMD = os.getenv("STOP_CMD")
 MINE_OPEN = True
 
 # announce clock
+# TODO: This will changable from discord ui
 ANN_HOUR = [0, 12]
 ANN_MINUTE = [0]
 
