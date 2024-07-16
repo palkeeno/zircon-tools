@@ -214,7 +214,7 @@ async def send_view_to_manage(channel):
     )
     # 鉱山の営業ステータス確認
     button_mine_status = discord.ui.Button(
-        label="鉱山の運営",
+        label="営業状況",
         style=discord.ButtonStyle.gray,
         custom_id=cids.MINE_STATUS,
     )
@@ -295,6 +295,10 @@ async def add_zircon(user_mention, zircon_num, message):
         await message.reply(content=f"ユーザ：{user_mention}は存在しません")
 
 
+def mine_status(isMineOpen):
+    return "OPEN" if config.MINE_OPEN else "CLOSE"
+
+
 # TODO: mine_status で「営業状況：OPEN/CLOSE [OPEN][CLOSE]」→eph「OPEN/CLOSEしますか？ [YES][NO]」→「OPEN/CLOSEしました」となるUIを作る（優先度：中）
 # 全イベントの監視
 @client.event
@@ -314,8 +318,7 @@ async def on_interaction(interaction: discord.Interaction):
             elif custom_id == cids.OUTPUT_RANK:
                 await output_rank_csv(interaction)
             elif custom_id == cids.MINE_STATUS:
-                status = "OPEN" if config.MINE_OPEN else "CLOSE"
-                await interaction.response.send_message(content=status, ephemeral=False)
+                await interaction.response.send_message(content=mine_status(config.MINE_OPEN), ephemeral=False)
     except KeyError:
         pass
 
@@ -356,8 +359,10 @@ async def on_message(message):
         await ch_mining.send(content=announce_msgs)
     if message.content == config.START_CMD:
         config.MINE_OPEN = True
+        await message.reply(content=mine_status(config.MINE_OPEN))
     if message.content == config.STOP_CMD:
         config.MINE_OPEN = False
+        await message.reply(content=mine_status(config.MINE_OPEN))
 
 
 # Bot起動
