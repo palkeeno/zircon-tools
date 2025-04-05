@@ -18,7 +18,7 @@ import models.mining as mining
 import models.users as users
 import util
 from models.db_utils import handle_db_error
-from views import MineStatusView, RankView, ResetConfirmView, TimeSettingModal
+from views import MineStatusView, RankView, ResetConfirmView
 from views.rank_view import get_rank_countries, output_rank_csv
 
 # init
@@ -131,9 +131,55 @@ async def zmreset(interaction: discord.Interaction, reset_type: str):
 @tree.command(name="zmtime", description="採掘時間を設定します")
 @is_admin_channel()
 @is_admin()
-async def zmtime(interaction: discord.Interaction):
-    modal = TimeSettingModal()
-    await interaction.response.send_modal(modal)
+async def zmtime(interaction: discord.Interaction, hours: str = None, minutes: str = None):
+    # 引数なしの場合は現在の設定を表示
+    if hours is None and minutes is None:
+        current_hours = config.ANN_HOUR
+        current_minutes = config.ANN_MINUTE
+        
+        # 時間を整形して表示
+        hours_str = ", ".join(map(str, current_hours))
+        minutes_str = ", ".join(map(str, current_minutes))
+        
+        await interaction.response.send_message(
+            f"現在の採掘時間設定:\n時間: {hours_str}\n分: {minutes_str}\n\n"
+            f"時間を設定するには、`/zmtime 時間 分` の形式で入力してください。\n"
+            f"例: `/zmtime 0,12 0` (0時と12時に設定)",
+            ephemeral=True
+        )
+        return
+    
+    # 引数がある場合は直接設定
+    try:
+        # 入力値を数値リストに変換
+        hours_list = [int(h.strip()) for h in hours.split(",")]
+        minutes_list = [int(m.strip()) for m in minutes.split(",")]
+        
+        # 値の検証
+        if not all(0 <= h <= 23 for h in hours_list):
+            raise ValueError("時間は0-23の範囲で指定してください")
+        if not all(0 <= m <= 59 for m in minutes_list):
+            raise ValueError("分は0-59の範囲で指定してください")
+        
+        # 設定を更新
+        config.ANN_HOUR = hours_list
+        config.ANN_MINUTE = minutes_list
+        
+        await interaction.response.send_message(
+            f"採掘時間を設定しました\n時間: {hours_list}\n分: {minutes_list}",
+            ephemeral=True
+        )
+    except ValueError as e:
+        await interaction.response.send_message(
+            f"エラー: {str(e)}",
+            ephemeral=True
+        )
+    except Exception as e:
+        print(f"時間設定エラー: {e}")
+        await interaction.response.send_message(
+            "時間設定中にエラーが発生しました",
+            ephemeral=True
+        )
 
 # Bot起動時に呼び出される関数
 @client.event
