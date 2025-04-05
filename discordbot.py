@@ -333,6 +333,15 @@ async def on_interaction(interaction: discord.Interaction):
         pass
 
 
+# コマンドと処理関数のマッピング
+COMMAND_HANDLERS = {
+    config.DEBUG_CMD: lambda m: send_announce() and m.reply(content=SysMsg.MANUAL_ANNOUNCE),
+    config.RESET_CMD: lambda m: mining.reset_db() and m.reply(content=SysMsg.RESET_DB),
+    config.MNG_CMD: lambda m: send_view_to_manage(m.channel),
+    config.START_CMD: lambda m: setattr(config, 'MINE_OPEN', True) and m.reply(content=mine_status(config.MINE_OPEN)),
+    config.STOP_CMD: lambda m: setattr(config, 'MINE_OPEN', False) and m.reply(content=mine_status(config.MINE_OPEN))
+}
+
 # TODO: 採掘可能時間の変更コマンドをつくる（優先度：低）→ 鉱山運営コマンドの中に入れる
 # TODO: STOP/START後に営業状況を自動でメッセージ出すようにする（優先度：中）
 # TODO: resetもボタンUIに入れる「データベースをリセットしますか？[やめる][採掘DB][すべてのDB]」→「本当に採掘/すべてのDBをリセットしますか？[YES][NO]」→「採掘/すべてのDBをリセットしました」
@@ -342,37 +351,23 @@ async def on_message(message):
         return
     if message.channel != client.get_channel(config.MCH):
         return
-    if message.content == config.DEBUG_CMD:
-        # announce manualy
-        await send_announce()
-        await message.reply(content=SysMsg.MANUAL_ANNOUNCE)
-    if message.content == config.RESET_CMD:
-        # reset mining database
-        await mining.reset_db()
-        await message.reply(content=SysMsg.RESET_DB)
-    if message.content == config.MNG_CMD:
-        # view, rank_role, rank_all
-        await send_view_to_manage(message.channel)
+        
+    # 通常コマンドの処理
+    if message.content in COMMAND_HANDLERS:
+        await COMMAND_HANDLERS[message.content](message)
+        return
+        
+    # 引数が必要なコマンドの処理
     if message.content.startswith(config.ADD_CMD):
-        # add zircon to designated user
-        args = message.content.split()  # [1]=mention, [2]=num
-        if len(args) != 3:
-            return
-        await add_zircon(args[1], int(args[2]), message)
-    if message.content.startswith(config.MSG_CMD):
-        # send Management Message to Mining channel as bot
-        args = message.content.split()  # [1]=message
-        if len(args) < 2:
-            return
-        ch_mining = client.get_channel(config.CHID_MINING)
-        announce_msgs = " ".join(args[1:])
-        await ch_mining.send(content=announce_msgs)
-    if message.content == config.START_CMD:
-        config.MINE_OPEN = True
-        await message.reply(content=mine_status(config.MINE_OPEN))
-    if message.content == config.STOP_CMD:
-        config.MINE_OPEN = False
-        await message.reply(content=mine_status(config.MINE_OPEN))
+        args = message.content.split()
+        if len(args) == 3:
+            await add_zircon(args[1], int(args[2]), message)
+    elif message.content.startswith(config.MSG_CMD):
+        args = message.content.split()
+        if len(args) >= 2:
+            ch_mining = client.get_channel(config.CHID_MINING)
+            announce_msgs = " ".join(args[1:])
+            await ch_mining.send(content=announce_msgs)
 
 
 # Bot起動
