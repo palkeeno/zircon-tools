@@ -75,9 +75,9 @@ def stats_self(result_mining, result_lifetime, usr, rank_self):
 
     embed.add_field(
         name=f"""
-ジルコン : {int(result_mining[2])} :gem: （累積 {int(result_lifetime[2])}）
-採掘回数 : {int(result_mining[4])} :pick: （累積 {int(result_lifetime[3])}）
-Excellent : {int(result_mining[5])} :tada: （累積 {int(result_lifetime[4])}）
+ジルコン : {int(result_mining[3])} :gem: （累積 {int(result_lifetime[2])}）
+採掘回数 : {int(result_mining[4])} :pick: （累積 {int(result_lifetime[4])}）
+Excellent : {int(result_mining[5])} :tada: （累積 {int(result_lifetime[5])}）
         """,
         value=f"国内順位 {rank}",
         inline=False,

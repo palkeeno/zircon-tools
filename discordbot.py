@@ -99,7 +99,7 @@ async def mining_zircon(interaction: discord.Interaction):
     # DBのレコードを見て採掘済みかチェック
     ures = await mining.get_user_single(interaction.user.id, country["role"])
     if ures is not None:
-        if bool(ures[3]):  # ures[3]=done_flag
+        if bool(ures[6]):  # ures[6]=done_flag
             await interaction.response.send_message(
                 content=SysMsg.ONCE_MINING, ephemeral=True
             )
@@ -134,7 +134,7 @@ async def mining_zircon(interaction: discord.Interaction):
         filename=fn_img,
     )
     ures = await mining.get_user_single(interaction.user.id, country["role"])
-    em2 = make_embed.mining(result, interaction.user, ures[2], fn_img)
+    em2 = make_embed.mining(result, interaction.user, ures[3], fn_img)
     await mining_msg.delete()
     await interaction.followup.send(embed=em2, file=img_mresult, ephemeral=True)
     # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
@@ -158,7 +158,7 @@ async def get_stats_self(interaction: discord.Interaction):
         await interaction.response.send_message(SysMsg.DATA_NOT_FOUND, ephemeral=True)
         return
     elif result_mining is None:
-        result_mining = [int(interaction.user.id), country["id"], 0, 0, 0, 0]
+        result_mining = [int(interaction.user.id), country["id"], 0, 0, 0, 0, 0]
     # 自分のランクを取得
     rank_list = await mining.get_rank_user_country(country["role"])
     res_self = [r for r in rank_list if r[1] == interaction.user.id]
