@@ -309,7 +309,17 @@ def mine_status(isMineOpen):
     return "OPEN" if config.MINE_OPEN else "CLOSE"
 
 
-# TODO: mine_status で「営業状況：OPEN/CLOSE [OPEN][CLOSE]」→eph「OPEN/CLOSEしますか？ [YES][NO]」→「OPEN/CLOSEしました」となるUIを作る（優先度：中）
+# ボタンIDと処理関数のマッピング
+BUTTON_HANDLERS = {
+    cids.MINING_ZIRCON: mining_zircon,
+    cids.COUNTRY_STATS: get_stats_country,
+    cids.SELF_STATS: get_stats_self,
+    cids.RANK_COUNTRY: get_rank_countries,
+    cids.OUTPUT_RANK: output_rank_csv,
+    cids.MINE_STATUS: lambda i: i.response.send_message(content=mine_status(config.MINE_OPEN), ephemeral=False)
+}
+
+# TODO: mine_status で「営業状況：OPEN/CLOSE [OPEN][CLOSE]」→「OPEN/CLOSEしますか？ [YES][NO]」→「OPEN/CLOSEしました」となるUIを作る（優先度：中）
 # 全イベントの監視
 @client.event
 async def on_interaction(interaction: discord.Interaction):
@@ -317,18 +327,8 @@ async def on_interaction(interaction: discord.Interaction):
         # component_type=2 : Button
         if interaction.data["component_type"] == 2:
             custom_id = interaction.data["custom_id"]
-            if custom_id == cids.MINING_ZIRCON:
-                await mining_zircon(interaction)
-            elif custom_id == cids.COUNTRY_STATS:
-                await get_stats_country(interaction)
-            elif custom_id == cids.SELF_STATS:
-                await get_stats_self(interaction)
-            elif custom_id == cids.RANK_COUNTRY:
-                await get_rank_countries(interaction)
-            elif custom_id == cids.OUTPUT_RANK:
-                await output_rank_csv(interaction)
-            elif custom_id == cids.MINE_STATUS:
-                await interaction.response.send_message(content=mine_status(config.MINE_OPEN), ephemeral=False)
+            if custom_id in BUTTON_HANDLERS:
+                await BUTTON_HANDLERS[custom_id](interaction)
     except KeyError:
         pass
 
