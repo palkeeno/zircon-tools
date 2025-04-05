@@ -1,19 +1,17 @@
 import datetime
 import sqlite3
 
-import util
-from config import COUNTRIES, DB_MINING
-from consts.const import JST, LONG_DT_FORMAT
+import config
+import consts.const as const
 from models.db_utils import (
-    init_db, get_single_record, upsert_record, reset_db, get_rank, get_current_datetime
+    init_db, get_single_record, upsert_record, reset_db, get_rank, get_current_datetime, handle_db_error
 )
 
 
-# 採掘結果のテーブル作成
-### zirnum = number of mined zircon
-### m_cnt = total count of mining as this user
-### ex_cnt = total count of excellent as this user
-### done_flag = the flag of wheather this user have done mining or not, 0:Flase, 1:True
+# 国を無視した個人の採掘累計のテーブル作成
+### current_total: 現在のzirnum合計（消費する可能性を考慮）
+### lifetime_total: 生涯の合計zirnum（消費してもここからは減らさない）
+### m_cnt, ex_cnt: 生涯の採掘回数合計、EX回数合計（消費しないのでlt）
 async def create_db():
     # テーブルスキーマ
     schema = """
@@ -29,17 +27,17 @@ async def create_db():
     )
     """
     # データベースを初期化
-    is_new = await init_db(DB_MINING, "MINING", schema, init_country_record)
+    is_new = await init_db(config.DB_MINING, "MINING", schema, init_country_record)
     return is_new
 
 
 # 国ユーザを初期で作成する
 def init_country_record():
     try:
-        with sqlite3.connect(DB_MINING) as connection:
+        with sqlite3.connect(config.DB_MINING) as connection:
             cursor = connection.cursor()
             now = get_current_datetime()
-            for country in COUNTRIES:
+            for country in config.COUNTRIES:
                 cursor.execute(
                     """
                     INSERT INTO MINING(userid, roleid, zirnum, m_cnt, ex_cnt, done_flag, updated_at)
@@ -49,33 +47,38 @@ def init_country_record():
                 )
             connection.commit()
     except sqlite3.Error as e:
-        print("DB-MINING INIT ERROR: ", e)
+        handle_db_error(e, "INIT", config.DB_MINING)
 
 
 # 採掘済みフラグをリセットする
 async def undo_done_flag():
     try:
-        with sqlite3.connect(DB_MINING) as connection:
+        with sqlite3.connect(config.DB_MINING) as connection:
             cursor = connection.cursor()
-            cursor.execute("UPDATE MINING SET done_flag = 0")
+            cursor.execute(
+                """
+                UPDATE MINING
+                SET done_flag = 0
+                """
+            )
             connection.commit()
     except sqlite3.Error as e:
-        print("DB-MINING UNDO ERROR: ", e)
+        handle_db_error(e, "UNDO_DONE_FLAG", config.DB_MINING)
 
 
 # ユーザの採掘情報を取得する
 async def get_user_single(userid, roleid):
-    return await get_single_record(DB_MINING, "MINING", userid, roleid)
+    return await get_single_record(config.DB_MINING, "MINING", userid, roleid)
 
 
 # 国の採掘情報を取得する
 async def get_country_single(roleid):
     try:
-        with sqlite3.connect(DB_MINING) as connection:
+        with sqlite3.connect(config.DB_MINING) as connection:
             cursor = connection.cursor()
             cursor.execute(
                 """
-                SELECT roleid, SUM(zirnum) as total_zirnum, COUNT(*) as total_count
+                SELECT roleid, SUM(zirnum), COUNT(*)
                 FROM MINING
                 WHERE roleid = ?
                 GROUP BY roleid
@@ -84,12 +87,12 @@ async def get_country_single(roleid):
             )
             return cursor.fetchone()
     except sqlite3.Error as e:
-        print("DB-MINING GET COUNTRY ERROR: ", e)
+        handle_db_error(e, "GET_COUNTRY_SINGLE", config.DB_MINING)
         return None
 
 
 # 採掘情報を更新または挿入する
-async def upsert(userid, roleid, zirnum, isExcellent, done_flag=1):
+async def upsert(userid, roleid, zirnum, isExcellent):
     now = get_current_datetime()
     
     # 既存レコードを取得
@@ -101,37 +104,51 @@ async def upsert(userid, roleid, zirnum, isExcellent, done_flag=1):
             "zirnum": record[3] + zirnum,
             "m_cnt": record[4] + 1,
             "ex_cnt": record[5] + (1 if isExcellent else 0),
-            "done_flag": done_flag,
+            "done_flag": 1,
             "updated_at": now
         }
-        return await upsert_record(DB_MINING, "MINING", userid, data, roleid)
+        return await upsert_record(config.DB_MINING, "MINING", userid, data, roleid)
     else:
         # 新規レコードを作成
         data = {
             "zirnum": zirnum,
             "m_cnt": 1,
             "ex_cnt": 1 if isExcellent else 0,
-            "done_flag": done_flag,
+            "done_flag": 1,
             "updated_at": now
         }
-        return await upsert_record(DB_MINING, "MINING", userid, data, roleid)
+        return await upsert_record(config.DB_MINING, "MINING", userid, data, roleid)
 
 
-# 国内ユーザランキングを取得する
+# ユーザのランキングを取得する
 async def get_rank_user_country(roleid):
-    return await get_rank(DB_MINING, "MINING", "user_country", roleid)
+    return await get_rank(config.DB_MINING, "MINING", "user_country", roleid)
 
 
-# 全ユーザランキングを取得する
-async def get_rank_user_overall():
-    return await get_rank(DB_MINING, "MINING", "user_overall")
-
-
-# 国ランキングを取得する
+# 国のランキングを取得する
 async def get_country_each():
-    return await get_rank(DB_MINING, "MINING", "country")
+    try:
+        with sqlite3.connect(config.DB_MINING) as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                SELECT roleid, SUM(zirnum)
+                FROM MINING
+                GROUP BY roleid
+                ORDER BY SUM(zirnum) DESC
+                """
+            )
+            return cursor.fetchall()
+    except sqlite3.Error as e:
+        handle_db_error(e, "GET_COUNTRY_EACH", config.DB_MINING)
+        return []
+
+
+# 全ユーザのランキングを取得する
+async def get_rank_user_overall():
+    return await get_rank(config.DB_MINING, "MINING", "user_overall")
 
 
 # データベースをリセットする
 async def reset_db():
-    return await reset_db(DB_MINING, "MINING")
+    return await reset_db(config.DB_MINING, "MINING")

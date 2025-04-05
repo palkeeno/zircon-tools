@@ -1,11 +1,10 @@
 import datetime
 import sqlite3
 
-import util
-from config import COUNTRIES, DB_USERS
-from consts.const import CURRENT, JST, LIFETIME, LONG_DT_FORMAT
+import config
+import consts.const as const
 from models.db_utils import (
-    init_db, get_single_record, upsert_record, reset_db, get_rank, get_current_datetime
+    init_db, get_single_record, upsert_record, reset_db, get_rank, get_current_datetime, handle_db_error
 )
 
 
@@ -27,17 +26,17 @@ async def create_db():
     )
     """
     # データベースを初期化
-    is_new = await init_db(DB_USERS, "USERS", schema, init_country_record)
+    is_new = await init_db(config.DB_USERS, "USERS", schema, init_country_record)
     return is_new
 
 
 # 国ユーザを初期で作成する
 def init_country_record():
     try:
-        with sqlite3.connect(DB_USERS) as connection:
+        with sqlite3.connect(config.DB_USERS) as connection:
             cursor = connection.cursor()
             now = get_current_datetime()
-            for country in COUNTRIES:
+            for country in config.COUNTRIES:
                 cursor.execute(
                     """
                     INSERT INTO USERS(userid, curr_total, lt_total, m_cnt, ex_cnt, updated_at)
@@ -47,12 +46,12 @@ def init_country_record():
                 )
             connection.commit()
     except sqlite3.Error as e:
-        print("DB-USERS INIT ERROR: ", e)
+        handle_db_error(e, "INIT", config.DB_USERS)
 
 
 # ユーザの採掘情報を取得する
 async def get_single(userid):
-    return await get_single_record(DB_USERS, "USERS", userid)
+    return await get_single_record(config.DB_USERS, "USERS", userid)
 
 
 # 採掘情報を更新または挿入する
@@ -71,7 +70,7 @@ async def upsert(userid, zirnum, isExcellent, isMining=True):
             "ex_cnt": record[5] + (1 if isExcellent else 0),
             "updated_at": now
         }
-        return await upsert_record(DB_USERS, "USERS", userid, data)
+        return await upsert_record(config.DB_USERS, "USERS", userid, data)
     else:
         # 新規レコードを作成
         data = {
@@ -81,14 +80,14 @@ async def upsert(userid, zirnum, isExcellent, isMining=True):
             "ex_cnt": 1 if isExcellent else 0,
             "updated_at": now
         }
-        return await upsert_record(DB_USERS, "USERS", userid, data)
+        return await upsert_record(config.DB_USERS, "USERS", userid, data)
 
 
 # ランキングを取得する
 async def get_rank(rank_type):
-    return await get_rank(DB_USERS, "USERS", rank_type)
+    return await get_rank(config.DB_USERS, "USERS", rank_type)
 
 
 # データベースをリセットする
 async def reset_db():
-    return await reset_db(DB_USERS, "USERS")
+    return await reset_db(config.DB_USERS, "USERS")
