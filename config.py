@@ -30,8 +30,8 @@ RESET_CMD = os.getenv("RESET_CMD")
 MNG_CMD = os.getenv("MNG_CMD")
 ADD_CMD = os.getenv("ADD_CMD")
 MSG_CMD = os.getenv("MSG_CMD")
-START_CMD = os.getenv("START_CMD")
-STOP_CMD = os.getenv("STOP_CMD")
+OPEN_CMD = os.getenv("OPEN_CMD")
+CLOSE_CMD = os.getenv("CLOSE_CMD")
 ##################
 
 # mining flag

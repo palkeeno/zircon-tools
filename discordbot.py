@@ -5,6 +5,7 @@ from datetime import datetime
 
 import discord
 from discord.ext import tasks
+from discord import app_commands
 
 # made for this prj
 import config
@@ -17,12 +18,122 @@ import models.mining as mining
 import models.users as users
 import util
 from models.db_utils import handle_db_error
+from views import MineStatusView, RankView, ResetConfirmView, TimeSettingModal
+from views.rank_view import get_rank_countries, output_rank_csv
 
 # init
 os.chdir(config.CWD)
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
+tree = app_commands.CommandTree(client)
 
+# 管理チャンネルチェック
+def is_admin_channel():
+    async def predicate(interaction: discord.Interaction) -> bool:
+        return interaction.channel_id == config.MCH
+    return app_commands.check(predicate)
+
+# 管理者権限チェック
+def is_admin():
+    async def predicate(interaction: discord.Interaction) -> bool:
+        return interaction.user.guild_permissions.administrator
+    return app_commands.check(predicate)
+
+# スラッシュコマンドの定義
+@tree.command(name="zmst", description="鉱山の営業状況を表示・変更します")
+@is_admin_channel()
+@is_admin()
+async def zmst(interaction: discord.Interaction):
+    view = MineStatusView()
+    await interaction.response.send_message(
+        f"現在の営業状況: {mine_status(config.MINE_OPEN)}\n変更する場合は下のボタンを押してください。",
+        view=view,
+        ephemeral=True
+    )
+
+@tree.command(name="zmrank", description="ランキング情報を表示します")
+@is_admin_channel()
+@is_admin()
+async def zmrank(interaction: discord.Interaction):
+    view = RankView()
+    await interaction.response.send_message(
+        "表示するランキングを選択してください：",
+        view=view,
+        ephemeral=True
+    )
+
+@tree.command(name="zmadd", description="指定したユーザーにジルコンを付与します")
+@is_admin_channel()
+@is_admin()
+async def zmadd(interaction: discord.Interaction, amount: int, user: discord.Member):
+    try:
+        country = util.get_country(user)
+        await mining.upsert(user.id, country["role"], amount, False, False)
+        await users.upsert(user.id, amount, False, False)
+        await interaction.response.send_message(
+            f"{user.mention}に{amount} :gem: 付与しました",
+            ephemeral=True
+        )
+    except Exception as e:
+        print(f"ジルコン付与エラー: {e}")
+        await interaction.response.send_message(
+            "ジルコン付与中にエラーが発生しました。",
+            ephemeral=True
+        )
+
+@tree.command(name="zmmsg", description="採掘チャンネルにメッセージを投稿します")
+@is_admin_channel()
+@is_admin()
+async def zmmsg(interaction: discord.Interaction, message: str):
+    try:
+        channel = client.get_channel(config.CHID_MINING)
+        await channel.send(content=message)
+        await interaction.response.send_message("メッセージを投稿しました", ephemeral=True)
+    except Exception as e:
+        print(f"メッセージ投稿エラー: {e}")
+        await interaction.response.send_message(
+            "メッセージの投稿中にエラーが発生しました。",
+            ephemeral=True
+        )
+
+@tree.command(name="zmsend", description="採掘アナウンスを手動で送信します")
+@is_admin_channel()
+@is_admin()
+async def zmsend(interaction: discord.Interaction):
+    try:
+        await send_announce()
+        await interaction.response.send_message("アナウンスを送信しました", ephemeral=True)
+    except Exception as e:
+        print(f"アナウンス送信エラー: {e}")
+        await interaction.response.send_message(
+            "アナウンスの送信中にエラーが発生しました。",
+            ephemeral=True
+        )
+
+@tree.command(name="zmreset", description="データベースをリセットします")
+@is_admin_channel()
+@is_admin()
+async def zmreset(interaction: discord.Interaction, reset_type: str):
+    if reset_type not in ["mining", "all"]:
+        await interaction.response.send_message(
+            "無効なリセットタイプです。'mining'または'all'を指定してください。",
+            ephemeral=True
+        )
+        return
+        
+    view = ResetConfirmView(reset_type)
+    await interaction.response.send_message(
+        f"{'採掘DB' if reset_type == 'mining' else 'すべてのDB'}をリセットしますか？",
+        view=view,
+        ephemeral=True
+    )
+
+@tree.command(name="zmtime", description="採掘時間を設定します")
+@is_admin_channel()
+@is_admin()
+async def zmtime(interaction: discord.Interaction):
+    modal = TimeSettingModal()
+    await interaction.response.send_modal(modal)
 
 # Bot起動時に呼び出される関数
 @client.event
@@ -33,6 +144,8 @@ async def on_ready():
         await users.create_db()
         # 定時アナウンス開始
         check_announce.start()
+        # スラッシュコマンドの同期
+        await tree.sync()
         print("Ready!")
     except Exception as e:
         print(f"起動エラー: {e}")
@@ -235,135 +348,14 @@ async def get_stats_country(interaction: discord.Interaction):
 
 ### 以下は運営コマンド
 
-
-# 運営向け管理ビュー
-async def send_view_to_manage(channel):
-    try:
-        # 国対抗ランキング表示ボタン
-        button_rank_country = discord.ui.Button(
-            label="国採掘量ランク",
-            style=discord.ButtonStyle.secondary,
-            custom_id=cids.RANK_COUNTRY,
-        )
-        # 全ユーザランキングCSV出力ボタン
-        button_rank_csv = discord.ui.Button(
-            label="ユーザ統計CSV",
-            style=discord.ButtonStyle.secondary,
-            custom_id=cids.OUTPUT_RANK,
-        )
-        # 鉱山の営業ステータス確認
-        button_mine_status = discord.ui.Button(
-            label="営業状況",
-            style=discord.ButtonStyle.gray,
-            custom_id=cids.MINE_STATUS,
-        )
-        view = discord.ui.View()
-        view.add_item(button_rank_country)
-        view.add_item(button_rank_csv)
-        view.add_item(button_mine_status)
-        await channel.send(view=view)
-    except Exception as e:
-        print(f"管理ビュー送信エラー: {e}")
-
-
-# 国ごとの採掘量ランキングを取得する
-async def get_rank_countries(interaction: discord.Interaction):
-    try:
-        result = await mining.get_country_each()
-        result = sorted(
-            result, key=lambda x: x[1], reverse=True
-        )  # zirnum数の降順に並び替え
-        for index, item in enumerate(result):
-            result[index][0] = util.get_country_by_roleid(item[0])
-        embed = make_embed.rank_country(result)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-    except Exception as e:
-        print(f"国ランキング表示エラー: {e}")
-        await interaction.response.send_message(
-            content="国ランキング情報の取得中にエラーが発生しました。", ephemeral=True
-        )
-
-
-# 全ユーザのランキングをcsv出力する
-async def output_rank_csv(interaction: discord.Interaction):
-    try:
-        dtStr = util.convertDt2Str(datetime.now(const.JST), const.SHORT_DT_FORMAT)
-        # 今回の採掘量ランクの出力
-        fname_now = const.CSV_FOLDER + "user-rank-now_" + dtStr + const.CSV
-        dat_mining = await mining.get_rank_user_overall()
-        for index, item in enumerate(dat_mining):
-            user = interaction.guild.get_member(item[1])  # メンションIDの取得
-            dat_mining[index][1] = user.display_name if user is not None else "None"
-            dat_mining[index][2] = user.mention if user is not None else "None"
-            country = [c for c in config.COUNTRIES if c["role"] == item[3]]
-            dat_mining[index][3] = country[0]["name"]
-        util.write_csv(fname_now, const.RANK_HEADER_NOW, dat_mining)
-
-        # 生涯の採掘量ランクの出力
-        fname_lt = const.CSV_FOLDER + "user-rank-lifetime_" + dtStr + const.CSV
-        dat_users = await users.get_rank(const.LIFETIME)
-        for index, item in enumerate(dat_users):
-            user = interaction.guild.get_member(item[1])  # メンションIDの取得
-            dat_users[index][1] = user.display_name if user is not None else "None"
-            dat_users[index][2] = user.mention if user is not None else "None"
-        util.write_csv(fname_lt, const.RANK_HEADER_LIFETIME, dat_users)
-        await interaction.response.send_message(
-            files=[discord.File(fname_now), discord.File(fname_lt)]
-        )
-    except Exception as e:
-        print(f"CSV出力エラー: {e}")
-        await interaction.response.send_message(
-            content="CSVファイルの出力中にエラーが発生しました。", ephemeral=True
-        )
-
-
-# zircon_numで指定した数だけ、指定したuserに付与
-async def add_zircon(user_mention, zircon_num, message):
-    try:
-        target = {"user_id": None, "country": None}
-        # 国ユーザの判定
-        for c in config.COUNTRIES:
-            if c["name"] == str(user_mention):
-                target["user_id"] = c["id"]
-                target["country"] = c["role"]
-        # 一般ユーザの判定
-        try:
-            mention_str = user_mention.strip("<@!>")
-            if target["user_id"] is None and util.isInt(mention_str):
-                target["user_id"] = int(mention_str)
-                target["country"] = util.get_country(
-                    message.guild.get_member(target["user_id"])
-                )["role"]
-            # ターゲットが存在すればジルコンを付与、そうでなければエラーメッセージ送信
-            if target["user_id"] is not None and target["country"] is not None:
-                await mining.upsert(
-                    target["user_id"], target["country"], zircon_num, False, False
-                )
-                await users.upsert(target["user_id"], zircon_num, False, False)
-                await message.reply(
-                    content=f"{user_mention}に{zircon_num} :gem: 付与しました"
-                )
-            else:
-                await message.reply(content=f"ユーザ：{user_mention}は存在しません")
-        except BaseException:
-            await message.reply(content=f"ユーザ：{user_mention}は存在しません")
-    except Exception as e:
-        print(f"ジルコン付与エラー: {e}")
-        await message.reply(content="ジルコン付与中にエラーが発生しました。")
-
-
 def mine_status(isMineOpen):
     return "OPEN" if config.MINE_OPEN else "CLOSE"
-
 
 # ボタンIDと処理関数のマッピング
 BUTTON_HANDLERS = {
     cids.MINING_ZIRCON: mining_zircon,
     cids.COUNTRY_STATS: get_stats_country,
-    cids.SELF_STATS: get_stats_self,
-    cids.RANK_COUNTRY: get_rank_countries,
-    cids.OUTPUT_RANK: output_rank_csv,
-    cids.MINE_STATUS: lambda i: i.response.send_message(content=mine_status(config.MINE_OPEN), ephemeral=False)
+    cids.SELF_STATS: get_stats_self
 }
 
 # TODO: mine_status で「営業状況：OPEN/CLOSE [OPEN][CLOSE]」→「OPEN/CLOSEしますか？ [YES][NO]」→「OPEN/CLOSEしました」となるUIを作る（優先度：中）
@@ -381,48 +373,6 @@ async def on_interaction(interaction: discord.Interaction):
         await interaction.response.send_message(
             content="ボタン処理中にエラーが発生しました。", ephemeral=True
         )
-
-
-# コマンドと処理関数のマッピング
-COMMAND_HANDLERS = {
-    config.DEBUG_CMD: lambda m: send_announce() and m.reply(content=SysMsg.MANUAL_ANNOUNCE),
-    config.RESET_CMD: lambda m: mining.reset_db() and m.reply(content=SysMsg.RESET_DB),
-    config.MNG_CMD: lambda m: send_view_to_manage(m.channel),
-    config.START_CMD: lambda m: setattr(config, 'MINE_OPEN', True) and m.reply(content=mine_status(config.MINE_OPEN)),
-    config.STOP_CMD: lambda m: setattr(config, 'MINE_OPEN', False) and m.reply(content=mine_status(config.MINE_OPEN))
-}
-
-# TODO: 採掘可能時間の変更コマンドをつくる（優先度：低）→ 鉱山運営コマンドの中に入れる
-# TODO: STOP/START後に営業状況を自動でメッセージ出すようにする（優先度：中）
-# TODO: resetもボタンUIに入れる「データベースをリセットしますか？[やめる][採掘DB][すべてのDB]」→「本当に採掘/すべてのDBをリセットしますか？[YES][NO]」→「採掘/すべてのDBをリセットしました」
-@client.event
-async def on_message(message):
-    try:
-        if message.author.bot:
-            return
-        if message.channel != client.get_channel(config.MCH):
-            return
-            
-        # 通常コマンドの処理
-        if message.content in COMMAND_HANDLERS:
-            await COMMAND_HANDLERS[message.content](message)
-            return
-            
-        # 引数が必要なコマンドの処理
-        if message.content.startswith(config.ADD_CMD):
-            args = message.content.split()
-            if len(args) == 3:
-                await add_zircon(args[1], int(args[2]), message)
-        elif message.content.startswith(config.MSG_CMD):
-            args = message.content.split()
-            if len(args) >= 2:
-                ch_mining = client.get_channel(config.CHID_MINING)
-                announce_msgs = " ".join(args[1:])
-                await ch_mining.send(content=announce_msgs)
-    except Exception as e:
-        print(f"メッセージ処理エラー: {e}")
-        await message.reply(content="コマンド処理中にエラーが発生しました。")
-
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)
