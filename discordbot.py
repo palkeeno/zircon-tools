@@ -9,6 +9,7 @@ from discord.ext import tasks
 # made for this prj
 import config
 import consts.cids as cids
+import consts.characters as characters
 import consts.const as const
 import consts.sysmsg as SysMsg
 import make_embed
@@ -47,7 +48,16 @@ async def check_announce():
 
 # 採掘アナウンスを送信
 async def send_announce():
-    text = SysMsg.LETS_MINING
+    # ランダムにキャラクターを選択
+    character = random.choice(characters.CHARACTERS)
+    # 選択したキャラクターのメッセージからランダムに選択
+    message = random.choice(character["messages"])
+    
+    # キャラクターのembedを作成
+    embed = discord.Embed(description=message)
+    embed.set_author(name=character["name"], icon_url=character["icon_url"])
+    embed.set_thumbnail(url=character["thumbnail_url"])
+    
     # 採掘ボタン
     button_mine = discord.ui.Button(
         label="採掘",
@@ -72,7 +82,7 @@ async def send_announce():
     view.add_item(button_total)
 
     channel = client.get_channel(config.CHID_MINING)
-    await channel.send(content=text, view=view)
+    await channel.send(embed=embed, view=view)
 
 
 ### 国未所属チェックはDiscordチャンネル側で設定
