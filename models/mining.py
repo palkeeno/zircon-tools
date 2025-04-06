@@ -6,6 +6,7 @@ import consts.const as const
 from models.db_utils import (
     init_db, get_single_record, upsert_record, reset_db, get_rank, get_current_datetime, handle_db_error
 )
+import util
 
 
 # 国を無視した個人の採掘累計のテーブル作成
@@ -126,7 +127,7 @@ async def get_rank_user_country(roleid):
 
 
 # 国のランキングを取得する
-async def get_country_each():
+async def get_country_ranks():
     try:
         with sqlite3.connect(config.DB_MINING) as connection:
             cursor = connection.cursor()
@@ -138,15 +139,59 @@ async def get_country_each():
                 ORDER BY SUM(zirnum) DESC
                 """
             )
-            return cursor.fetchall()
+            results = cursor.fetchall()
+            
+            # 国名と採掘量のリストを作成
+            ranks = []
+            for roleid, amount in results:
+                country = util.get_country_by_roleid(roleid)
+                if country:
+                    ranks.append((country["name"], amount))
+            return ranks
     except sqlite3.Error as e:
-        handle_db_error(e, "GET_COUNTRY_EACH", config.DB_MINING)
+        handle_db_error(e, "GET_COUNTRY_RANKS", config.DB_MINING)
         return []
 
 
-# 全ユーザのランキングを取得する
-async def get_rank_user_overall():
-    return await get_rank(config.DB_MINING, "MINING", "user_overall")
+# 全ユーザーのイベント統計情報を取得する
+async def get_all_event_stats(guild):
+    try:
+        with sqlite3.connect(config.DB_MINING) as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                SELECT userid, roleid, zirnum, m_cnt, ex_cnt
+                FROM MINING
+                ORDER BY zirnum DESC
+                """
+            )
+            results = cursor.fetchall()
+            
+            # 統計情報のリストを作成
+            stats = []
+            for userid, roleid, zirnum, m_cnt, ex_cnt in results:
+                # 国情報を取得
+                country = util.get_country_by_roleid(roleid)
+                country_name = country["name"] if country else "不明"
+                
+                # ユーザー情報を取得
+                user = guild.get_member(userid)
+                username = user.display_name if user else "不明"
+                mention = user.mention if user else f"<@{userid}>"
+                
+                stats.append({
+                    "user_id": userid,
+                    "username": username,
+                    "mention": mention,
+                    "country": country_name,
+                    "zirnum": zirnum,
+                    "m_cnt": m_cnt,
+                    "ex_cnt": ex_cnt
+                })
+            return stats
+    except sqlite3.Error as e:
+        handle_db_error(e, "GET_ALL_EVENT_STATS", config.DB_MINING)
+        return []
 
 
 # データベースをリセットする

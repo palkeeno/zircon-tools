@@ -3,6 +3,8 @@
 .archive
 prd/
 csv/
+backups/
+.trunk/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

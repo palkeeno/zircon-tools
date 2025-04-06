@@ -19,7 +19,7 @@ import models.users as users
 import util
 from models.db_utils import handle_db_error
 from views import MineStatusView, RankView, ResetConfirmView
-from views.rank_view import get_rank_countries, output_rank_csv
+from views.rank_view import get_rank_countries, output_event_stats_csv, output_lifetime_stats_csv
 from models.backup_utils import perform_backup
 
 # init
@@ -60,8 +60,8 @@ async def zmrank(interaction: discord.Interaction):
 async def zmadd(interaction: discord.Interaction, amount: int, user: discord.Member):
     try:
         country = util.get_country(user)
-        await mining.upsert(user.id, country["role"], amount, False, False)
-        await users.upsert(user.id, amount, False, False)
+        await mining.upsert(user.id, country["role"], amount, False)
+        await users.upsert(user.id, amount, False)
         await interaction.response.send_message(
             f"{user.mention}に{amount} :gem: 付与しました",
             ephemeral=True
@@ -325,10 +325,15 @@ async def get_stats_self(interaction: discord.Interaction):
             return
         elif result_mining is None:
             result_mining = [int(interaction.user.id), country["id"], 0, 0, 0, 0, 0]
+        
         # 自分のランクを取得
         rank_list = await mining.get_rank_user_country(country["role"])
-        res_self = [r for r in rank_list if r[1] == interaction.user.id]
-        rank_self = res_self[0][0]
+        rank_self = 0
+        for r in rank_list:
+            if r[1] == interaction.user.id:  # r[1]はuserid
+                rank_self = r[0]  # r[0]はrank
+                break
+                
         # embed作成して返信
         embed = make_embed.stats_self(
             result_mining, result_lifetime, interaction.user, rank_self
@@ -336,9 +341,11 @@ async def get_stats_self(interaction: discord.Interaction):
         await interaction.response.send_message(embed=embed, ephemeral=True)
     except Exception as e:
         print(f"統計表示エラー: {e}")
-        await interaction.response.send_message(
-            content="統計情報の取得中にエラーが発生しました。", ephemeral=True
-        )
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                content="統計情報の取得中にエラーが発生しました。",
+                ephemeral=True
+            )
 
 
 # 所属国の統計量（採掘数、採掘回数、ランキングTop10）を表示するアクション
@@ -353,24 +360,28 @@ async def get_stats_country(interaction: discord.Interaction):
         # ランク情報の取得
         result_rank = await mining.get_rank_user_country(country["role"])
         # 自分の順位を取得
-        res_self = [r for r in result_rank if r[1] == interaction.user.id]
-        rank_self = None
-        try:
-            rank_self = res_self[0][0]
-        except IndexError:
-            rank_self = 0
+        rank_self = 0
+        for r in result_rank:
+            if r[1] == interaction.user.id:  # r[1]はuserid
+                rank_self = r[0]  # r[0]はrank
+                break
+                
         # TOP10を取得
-        for index, item in enumerate(result_rank):
-            user = interaction.guild.get_member(item[1])
-            result_rank[index][1] = user.display_name if user is not None else "None"
-            # result_rank[[user_mention1, zirnum1,...], [user_mention2, zirnum2,...],...]
+        formatted_rank = []
+        for r in result_rank[:10]:  # 上位10件のみ取得
+            user = interaction.guild.get_member(r[1])  # r[1]はuserid
+            formatted_rank.append([
+                r[0],  # rank
+                user.display_name if user is not None else "None",  # ユーザー名
+                r[2]  # zirnum（採掘量）
+            ])
 
         flag_of_country = discord.File(
             fp=f"{config.CWD}/assets/{country['name']}.jpg",
             filename=f"{country['name']}.jpg",
         )
         embed = make_embed.stats_country(
-            result_country, country["name"], result_rank, rank_self
+            result_country, country["name"], formatted_rank, rank_self
         )
         await interaction.response.send_message(
             file=flag_of_country, embed=embed, ephemeral=True
@@ -399,16 +410,21 @@ BUTTON_HANDLERS = {
 @client.event
 async def on_interaction(interaction: discord.Interaction):
     try:
-        # component_type=2 : Button
-        if interaction.data["component_type"] == 2:
-            custom_id = interaction.data["custom_id"]
-            if custom_id in BUTTON_HANDLERS:
-                await BUTTON_HANDLERS[custom_id](interaction)
+        if hasattr(interaction, 'data') and 'component_type' in interaction.data:
+            if interaction.data["component_type"] == 2:  # Button
+                custom_id = interaction.data["custom_id"]
+                if custom_id in BUTTON_HANDLERS:
+                    await BUTTON_HANDLERS[custom_id](interaction)
     except Exception as e:
         print(f"ボタン処理エラー: {e}")
-        await interaction.response.send_message(
-            content="ボタン処理中にエラーが発生しました。", ephemeral=True
-        )
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    content="ボタン処理中にエラーが発生しました。",
+                    ephemeral=True
+                )
+        except Exception:
+            pass  # 既に応答済みの場合は無視
 
 # バックアップスケジューラ
 @tasks.loop(hours=24)

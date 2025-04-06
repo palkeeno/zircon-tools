@@ -275,7 +275,7 @@ async def get_rank(
     Args:
         db_path (str): データベースのパス
         table_name (str): テーブル名
-        rank_type (str): ランキングの種類（"current"または"lifetime"）
+        rank_type (str): ランキングの種類（"user_country","user_overall","current"または"lifetime"）
         roleid (Optional[int], optional): ロールID. Defaults to None.
 
     Returns:
@@ -288,7 +288,7 @@ async def get_rank(
         if rank_type == "user_country" and roleid is not None:
             # 国内ユーザランキング
             cursor.execute(f"""
-                SELECT ROW_NUMBER() OVER (ORDER BY zirnum DESC) as rank, userid, zirnum, roleid
+                SELECT ROW_NUMBER() OVER (ORDER BY zirnum DESC) as rank, userid, zirnum, m_cnt, ex_cnt
                 FROM {table_name}
                 WHERE roleid = ?
                 ORDER BY zirnum DESC
@@ -296,7 +296,7 @@ async def get_rank(
         elif rank_type == "user_overall":
             # 全ユーザランキング
             cursor.execute(f"""
-                SELECT ROW_NUMBER() OVER (ORDER BY zirnum DESC) as rank, userid, zirnum, roleid
+                SELECT ROW_NUMBER() OVER (ORDER BY zirnum DESC) as rank, userid, zirnum, m_cnt, ex_cnt
                 FROM {table_name}
                 ORDER BY zirnum DESC
             """)
@@ -323,12 +323,13 @@ async def get_rank(
         connection.close()
 
     # ランキングデータを整形
-    result_list = [[0] * 6 for i in range(len(result))]
-    for index, res in enumerate(result):
-        result_list[index][0] = int(index + 1)  # rank
-        result_list[index][1] = res[0]  # userid
-        result_list[index][2] = ""  # ユーザmentionの予約地
-        result_list[index][3] = int(res[1])  # current/lifetime total
-        result_list[index][4] = int(res[2])  # mining count
-        result_list[index][5] = int(res[3])  # excellent count
-    return result_list 
+    if rank_type == "user_country":
+        # ユーザーランキングの場合
+        return [[r[0], r[1], r[2], r[3], r[4]] for r in result]  # [rank, userid, zirnum, m_cnt, ex_cnt]
+    elif rank_type == "country":
+        # 国ランキングの場合
+        return [[r[0], r[1], r[2]] for r in result]  # [roleid, total_zirnum, total_count]
+    elif rank_type == "lifetime":
+        # 生涯ランキングの場合
+        return [[r[0], r[1], r[2], r[3], r[4]] for r in result]  # [rank, userid, lt_total, m_cnt, ex_cnt]
+    return [] 

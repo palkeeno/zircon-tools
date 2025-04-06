@@ -6,6 +6,7 @@ import consts.const as const
 from models.db_utils import (
     init_db, get_single_record, upsert_record, reset_db, get_rank, get_current_datetime, handle_db_error
 )
+import util
 
 
 # 国を無視した個人の採掘累計のテーブル作成
@@ -91,3 +92,83 @@ async def get_rank(rank_type):
 # データベースをリセットする
 async def reset_db():
     return await reset_db(config.DB_USERS, "USERS")
+
+
+# 全ユーザーの統計情報を取得する
+async def get_all_stats():
+    try:
+        with sqlite3.connect(config.DB_USERS) as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                SELECT userid, curr_total, updated_at
+                FROM USERS
+                ORDER BY curr_total DESC
+                """
+            )
+            results = cursor.fetchall()
+            
+            # 統計情報のリストを作成
+            stats = []
+            for userid, total, last_mined in results:
+                # 国情報を取得
+                country = "不明"
+                for c in config.COUNTRIES:
+                    if userid == c["id"]:
+                        country = c["name"]
+                        break
+                
+                stats.append({
+                    "user_id": userid,
+                    "country": country,
+                    "total_amount": total,
+                    "last_mined": last_mined
+                })
+            return stats
+    except sqlite3.Error as e:
+        handle_db_error(e, "GET_ALL_STATS", config.DB_USERS)
+        return []
+
+
+# 全ユーザーの生涯統計情報を取得する
+async def get_all_lifetime_stats(guild):
+    try:
+        with sqlite3.connect(config.DB_USERS) as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                SELECT userid, lt_total, m_cnt, ex_cnt
+                FROM USERS
+                ORDER BY lt_total DESC
+                """
+            )
+            results = cursor.fetchall()
+            
+            # 統計情報のリストを作成
+            stats = []
+            for userid, lt_total, m_cnt, ex_cnt in results:
+                # 国情報を取得
+                country = "不明"
+                for c in config.COUNTRIES:
+                    if userid == c["id"]:
+                        country = c["name"]
+                        break
+                
+                # ユーザー情報を取得
+                user = guild.get_member(userid)
+                username = user.display_name if user else "不明"
+                mention = user.mention if user else f"<@{userid}>"
+                
+                stats.append({
+                    "user_id": userid,
+                    "username": username,
+                    "mention": mention,
+                    "country": country,
+                    "lt_total": lt_total,
+                    "m_cnt": m_cnt,
+                    "ex_cnt": ex_cnt
+                })
+            return stats
+    except sqlite3.Error as e:
+        handle_db_error(e, "GET_ALL_LIFETIME_STATS", config.DB_USERS)
+        return []
