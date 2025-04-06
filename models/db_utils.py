@@ -1,9 +1,11 @@
 import datetime
 import sqlite3
+import traceback
 from typing import List, Tuple, Any, Optional, Callable, Dict, Union
 
 from consts.const import JST, LONG_DT_FORMAT
 from config import DB_MINING, DB_USERS
+from consts.sysmsg import ERROR_MESSAGES
 
 
 # エラーハンドリング関数
@@ -15,7 +17,30 @@ def handle_db_error(error: sqlite3.Error, operation: str, db_path: str) -> None:
         operation (str): 実行していた操作の名前
         db_path (str): データベースのパス
     """
-    print(f"DB-{db_path} {operation} ERROR: {error}")
+    error_time = datetime.datetime.now(JST).strftime(LONG_DT_FORMAT)
+    error_type = type(error).__name__
+    error_msg = str(error)
+    stack_trace = traceback.format_exc()
+    
+    error_log = f"""
+データベースエラーが発生しました
+時間: {error_time}
+データベース: {db_path}
+操作: {operation}
+エラータイプ: {error_type}
+エラーメッセージ: {error_msg}
+スタックトレース:
+{stack_trace}
+"""
+    print(error_log)
+    
+    # エラーの種類に応じて適切なメッセージを返す
+    if isinstance(error, sqlite3.IntegrityError):
+        return ERROR_MESSAGES['DB_ERROR']
+    elif isinstance(error, sqlite3.OperationalError):
+        return ERROR_MESSAGES['DB_ERROR']
+    else:
+        return ERROR_MESSAGES['SYSTEM_ERROR']
 
 
 # データベース接続を取得する

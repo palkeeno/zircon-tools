@@ -5,3 +5,13 @@ MINE_CLOSED = "現在採掘所は営業を停止しております。再開さ�
 MANUAL_ANNOUNCE = "アナウンスを発動しました"
 RESET_DB = "データベースをリセットしました"
 DATA_NOT_FOUND = "データがありません"
+
+# エラーメッセージ
+ERROR_MESSAGES = {
+    'DB_ERROR': 'データベース操作中にエラーが発生しました。',
+    'PERMISSION_ERROR': '権限が不足しています。',
+    'INVALID_AMOUNT': '無効な数値が指定されました。',
+    'USER_NOT_FOUND': '指定されたユーザーが見つかりません。',
+    'MINING_CLOSED': '現在採掘は停止中です。',
+    'SYSTEM_ERROR': 'システムエラーが発生しました。',
+}

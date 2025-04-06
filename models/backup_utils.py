@@ -1,0 +1,57 @@
+import os
+import shutil
+import datetime
+from typing import List
+from config import DB_MINING, DB_USERS
+from consts.const import JST
+
+def create_backup() -> List[str]:
+    """データベースのバックアップを作成する
+
+    Returns:
+        List[str]: バックアップファイルのパスリスト
+    """
+    backup_dir = "backups"
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+
+    timestamp = datetime.datetime.now(JST).strftime("%Y%m%d_%H%M%S")
+    backup_files = []
+
+    # 各データベースファイルのバックアップを作成
+    for db_path in [DB_MINING, DB_USERS]:
+        if os.path.exists(db_path):
+            backup_path = os.path.join(backup_dir, f"{os.path.basename(db_path)}_{timestamp}")
+            shutil.copy2(db_path, backup_path)
+            backup_files.append(backup_path)
+
+    return backup_files
+
+def cleanup_old_backups(days_to_keep: int = 7) -> None:
+    """古いバックアップファイルを削除する
+
+    Args:
+        days_to_keep (int): 保持する日数
+    """
+    backup_dir = "backups"
+    if not os.path.exists(backup_dir):
+        return
+
+    cutoff_date = datetime.datetime.now(JST) - datetime.timedelta(days=days_to_keep)
+    
+    for filename in os.listdir(backup_dir):
+        file_path = os.path.join(backup_dir, filename)
+        file_time = datetime.datetime.fromtimestamp(os.path.getctime(file_path), JST)
+        
+        if file_time < cutoff_date:
+            os.remove(file_path)
+
+def perform_backup() -> List[str]:
+    """バックアップを実行し、古いバックアップを削除する
+
+    Returns:
+        List[str]: 作成されたバックアップファイルのパスリスト
+    """
+    backup_files = create_backup()
+    cleanup_old_backups()
+    return backup_files 

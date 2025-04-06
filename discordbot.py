@@ -20,6 +20,7 @@ import util
 from models.db_utils import handle_db_error
 from views import MineStatusView, RankView, ResetConfirmView
 from views.rank_view import get_rank_countries, output_rank_csv
+from models.backup_utils import perform_backup
 
 # init
 os.chdir(config.CWD)
@@ -33,16 +34,9 @@ def is_admin_channel():
         return interaction.channel_id == config.MCH
     return app_commands.check(predicate)
 
-# 管理者権限チェック
-def is_admin():
-    async def predicate(interaction: discord.Interaction) -> bool:
-        return interaction.user.guild_permissions.administrator
-    return app_commands.check(predicate)
-
 # スラッシュコマンドの定義
 @tree.command(name="zmst", description="鉱山の営業状況を表示・変更します")
 @is_admin_channel()
-@is_admin()
 async def zmst(interaction: discord.Interaction):
     view = MineStatusView()
     await interaction.response.send_message(
@@ -53,7 +47,6 @@ async def zmst(interaction: discord.Interaction):
 
 @tree.command(name="zmrank", description="ランキング情報を表示します")
 @is_admin_channel()
-@is_admin()
 async def zmrank(interaction: discord.Interaction):
     view = RankView()
     await interaction.response.send_message(
@@ -64,7 +57,6 @@ async def zmrank(interaction: discord.Interaction):
 
 @tree.command(name="zmadd", description="指定したユーザーにジルコンを付与します")
 @is_admin_channel()
-@is_admin()
 async def zmadd(interaction: discord.Interaction, amount: int, user: discord.Member):
     try:
         country = util.get_country(user)
@@ -83,7 +75,6 @@ async def zmadd(interaction: discord.Interaction, amount: int, user: discord.Mem
 
 @tree.command(name="zmmsg", description="採掘チャンネルにメッセージを投稿します")
 @is_admin_channel()
-@is_admin()
 async def zmmsg(interaction: discord.Interaction, message: str):
     try:
         channel = client.get_channel(config.CHID_MINING)
@@ -98,7 +89,6 @@ async def zmmsg(interaction: discord.Interaction, message: str):
 
 @tree.command(name="zmsend", description="採掘アナウンスを手動で送信します")
 @is_admin_channel()
-@is_admin()
 async def zmsend(interaction: discord.Interaction):
     try:
         await send_announce()
@@ -112,7 +102,6 @@ async def zmsend(interaction: discord.Interaction):
 
 @tree.command(name="zmreset", description="データベースをリセットします")
 @is_admin_channel()
-@is_admin()
 async def zmreset(interaction: discord.Interaction, reset_type: str):
     if reset_type not in ["mining", "all"]:
         await interaction.response.send_message(
@@ -130,7 +119,6 @@ async def zmreset(interaction: discord.Interaction, reset_type: str):
 
 @tree.command(name="zmtime", description="採掘時間を設定します")
 @is_admin_channel()
-@is_admin()
 async def zmtime(interaction: discord.Interaction, hours: str = None, minutes: str = None):
     # 引数なしの場合は現在の設定を表示
     if hours is None and minutes is None:
@@ -192,6 +180,8 @@ async def on_ready():
         check_announce.start()
         # スラッシュコマンドの同期
         await tree.sync()
+        # バックアップスケジューラ開始
+        schedule_backup.start()
         print("Ready!")
     except Exception as e:
         print(f"起動エラー: {e}")
@@ -419,6 +409,20 @@ async def on_interaction(interaction: discord.Interaction):
         await interaction.response.send_message(
             content="ボタン処理中にエラーが発生しました。", ephemeral=True
         )
+
+# バックアップスケジューラ
+@tasks.loop(hours=24)
+async def schedule_backup():
+    """24時間ごとにバックアップを実行する（鉱山がOPENの場合のみ）"""
+    try:
+        # 鉱山がOPENの場合のみバックアップを実行
+        if config.MINE_OPEN:
+            backup_files = perform_backup()
+            print(f"バックアップが完了しました: {backup_files}")
+        else:
+            print("鉱山がCLOSEのため、バックアップをスキップしました")
+    except Exception as e:
+        print(f"バックアップ中にエラーが発生しました: {e}")
 
 # Bot起動
 client.run(config.DISCORD_TOKEN)
