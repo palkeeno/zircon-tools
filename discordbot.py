@@ -405,7 +405,7 @@ BUTTON_HANDLERS = {
     cids.SELF_STATS: get_stats_self
 }
 
-# TODO: mine_status で「営業状況：OPEN/CLOSE [OPEN][CLOSE]」→「OPEN/CLOSEしますか？ [YES][NO]」→「OPEN/CLOSEしました」となるUIを作る（優先度：中）
+# mine_status で「営業状況：OPEN/CLOSE [OPEN][CLOSE]」→「OPEN/CLOSEしますか？ [YES][NO]」→「OPEN/CLOSEしました」となるUIを作る（優先度：中）
 # 全イベントの監視
 @client.event
 async def on_interaction(interaction: discord.Interaction):
