@@ -42,7 +42,7 @@ async def zmst(interaction: discord.Interaction):
     await interaction.response.send_message(
         f"現在の営業状況: {mine_status(config.MINE_OPEN)}\n変更する場合は下のボタンを押してください。",
         view=view,
-        ephemeral=True
+        ephemeral=False
     )
 
 @tree.command(name="zmrank", description="ランキング情報を表示します")
@@ -52,7 +52,7 @@ async def zmrank(interaction: discord.Interaction):
     await interaction.response.send_message(
         "表示するランキングを選択してください：",
         view=view,
-        ephemeral=True
+        ephemeral=False
     )
 
 @tree.command(name="zmadd", description="指定したユーザーにジルコンを付与します")
@@ -64,13 +64,13 @@ async def zmadd(interaction: discord.Interaction, amount: int, user: discord.Mem
         await users.upsert(user.id, amount, False)
         await interaction.response.send_message(
             f"{user.mention}に{amount} :gem: 付与しました",
-            ephemeral=True
+            ephemeral=False
         )
     except Exception as e:
         print(f"ジルコン付与エラー: {e}")
         await interaction.response.send_message(
             "ジルコン付与中にエラーが発生しました。",
-            ephemeral=True
+            ephemeral=False
         )
 
 @tree.command(name="zmmsg", description="採掘チャンネルにメッセージを投稿します")
@@ -84,7 +84,7 @@ async def zmmsg(interaction: discord.Interaction, message: str):
         print(f"メッセージ投稿エラー: {e}")
         await interaction.response.send_message(
             "メッセージの投稿中にエラーが発生しました。",
-            ephemeral=True
+            ephemeral=False
         )
 
 @tree.command(name="zmsend", description="採掘アナウンスを手動で送信します")
@@ -92,12 +92,12 @@ async def zmmsg(interaction: discord.Interaction, message: str):
 async def zmsend(interaction: discord.Interaction):
     try:
         await send_announce()
-        await interaction.response.send_message("アナウンスを送信しました", ephemeral=True)
+        await interaction.response.send_message("アナウンスを送信しました", ephemeral=False)
     except Exception as e:
         print(f"アナウンス送信エラー: {e}")
         await interaction.response.send_message(
             "アナウンスの送信中にエラーが発生しました。",
-            ephemeral=True
+            ephemeral=False
         )
 
 @tree.command(name="zmreset", description="データベースをリセットします")
@@ -106,7 +106,7 @@ async def zmreset(interaction: discord.Interaction, reset_type: str):
     if reset_type not in ["mining", "all"]:
         await interaction.response.send_message(
             "無効なリセットタイプです。'mining'または'all'を指定してください。",
-            ephemeral=True
+            ephemeral=False
         )
         return
         
@@ -114,7 +114,7 @@ async def zmreset(interaction: discord.Interaction, reset_type: str):
     await interaction.response.send_message(
         f"{'採掘DB' if reset_type == 'mining' else 'すべてのDB'}をリセットしますか？",
         view=view,
-        ephemeral=True
+        ephemeral=False
     )
 
 @tree.command(name="zmtime", description="採掘時間を設定します")
@@ -133,7 +133,7 @@ async def zmtime(interaction: discord.Interaction, hours: str = None, minutes: s
             f"現在の採掘時間設定:\n時間: {hours_str}\n分: {minutes_str}\n\n"
             f"時間を設定するには、`/zmtime 時間 分` の形式で入力してください。\n"
             f"例: `/zmtime 0,12 0` (0時と12時に設定)",
-            ephemeral=True
+            ephemeral=False
         )
         return
     
@@ -155,18 +155,18 @@ async def zmtime(interaction: discord.Interaction, hours: str = None, minutes: s
         
         await interaction.response.send_message(
             f"採掘時間を設定しました\n時間: {hours_list}\n分: {minutes_list}",
-            ephemeral=True
+            ephemeral=False
         )
     except ValueError as e:
         await interaction.response.send_message(
             f"エラー: {str(e)}",
-            ephemeral=True
+            ephemeral=False
         )
     except Exception as e:
         print(f"時間設定エラー: {e}")
         await interaction.response.send_message(
             "時間設定中にエラーが発生しました",
-            ephemeral=True
+            ephemeral=False
         )
 
 # Bot起動時に呼び出される関数
