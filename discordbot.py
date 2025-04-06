@@ -79,7 +79,7 @@ async def zmmsg(interaction: discord.Interaction, message: str):
     try:
         channel = client.get_channel(config.CHID_MINING)
         await channel.send(content=message)
-        await interaction.response.send_message("メッセージを投稿しました", ephemeral=True)
+        await interaction.response.send_message(f"メッセージを投稿しました\n投稿内容：{message}", ephemeral=False)
     except Exception as e:
         print(f"メッセージ投稿エラー: {e}")
         await interaction.response.send_message(
