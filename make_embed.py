@@ -2,7 +2,6 @@ import discord
 import traceback
 
 from util import ordinal
-from models.db_utils import handle_db_error
 
 
 # エラーハンドリング関数

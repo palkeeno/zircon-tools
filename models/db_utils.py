@@ -1,10 +1,9 @@
 import datetime
 import sqlite3
 import traceback
-from typing import List, Tuple, Any, Optional, Callable, Dict, Union
+from typing import List, Tuple, Optional, Callable, Dict, Union
 
 from consts.const import JST, LONG_DT_FORMAT
-from config import DB_MINING, DB_USERS
 from consts.sysmsg import ERROR_MESSAGES
 
 

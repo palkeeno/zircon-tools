@@ -17,9 +17,7 @@ import make_embed
 import models.mining as mining
 import models.users as users
 import util
-from models.db_utils import handle_db_error
 from views import MineStatusView, RankView, ResetConfirmView
-from views.rank_view import get_rank_countries, output_event_stats_csv, output_lifetime_stats_csv
 from models.backup_utils import perform_backup
 
 # init

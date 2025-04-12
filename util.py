@@ -1,9 +1,8 @@
 import csv
-import datetime
 import traceback
+from datetime import datetime
 
 import config
-from models.db_utils import handle_db_error
 
 
 # エラーハンドリング関数
@@ -84,10 +83,10 @@ def convertDt2Str(dt: datetime, format):
 # String型からdatetime型に変換
 def convertStr2Dt(dt: str, format):
     try:
-        return datetime.datetime.strptime(dt, format)
+        return datetime.strptime(dt, format)
     except Exception as e:
         handle_util_error(e, "convertStr2Dt")
-        return datetime.datetime.now()
+        return datetime.now()
 
 
 # String型からint型に変換可能か判定
@@ -97,7 +96,7 @@ def isInt(s):
     except ValueError:
         return False  # 例外が発生=変換できない
     else:
-        return True  # 例外が発生しない=変換不可能
+        return True  # 例外が発生しない=変換可能
 
 
 def ordinal(n):

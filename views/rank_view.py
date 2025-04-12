@@ -4,7 +4,6 @@ import io
 from datetime import datetime
 import models.mining as mining
 import models.users as users
-import util
 
 async def get_rank_countries(interaction: discord.Interaction):
     try:

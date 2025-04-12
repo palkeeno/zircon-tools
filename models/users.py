@@ -1,12 +1,9 @@
-import datetime
 import sqlite3
 
 import config
-import consts.const as const
 from models.db_utils import (
     init_db, get_single_record, upsert_record, reset_db, get_rank, get_current_datetime, handle_db_error
 )
-import util
 
 
 # 国を無視した個人の採掘累計のテーブル作成
