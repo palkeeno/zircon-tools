@@ -87,9 +87,9 @@ async def zmmsg(interaction: discord.Interaction, message: str):
             ephemeral=False
         )
 
-@tree.command(name="zmsend", description="採掘アナウンスを手動で送信します")
+@tree.command(name="zmannounce", description="採掘アナウンスを手動で送信します")
 @is_admin_channel()
-async def zmsend(interaction: discord.Interaction):
+async def zmannounce(interaction: discord.Interaction):
     try:
         await send_announce()
         await interaction.response.send_message("アナウンスを送信しました", ephemeral=False)
@@ -168,6 +168,28 @@ async def zmtime(interaction: discord.Interaction, hours: str = None, minutes: s
             "時間設定中にエラーが発生しました",
             ephemeral=False
         )
+
+@tree.command(name="zmhelp", description="運営向けのヘルプを表示します")
+@is_admin_channel()
+async def zmhelp(interaction: discord.Interaction):
+    help_text = """
+**運営コマンド一覧**
+
+`/zmst` - 鉱山の営業状況を表示・変更します
+`/zmrank` - ランキング情報を表示します
+`/zmadd <amount> <user>` - 指定したユーザーにジルコンを付与します
+`/zmmsg <message>` - 採掘チャンネルにメッセージを投稿します
+`/zmannounce` - 採掘アナウンスを手動で送信します
+`/zmreset <mining/all>` - データベースをリセットします
+`/zmtime [hours] [minutes]` - 採掘時間を設定します
+`/zmhelp` - このヘルプを表示します
+
+**注意事項**
+- すべてのコマンドは管理チャンネルでのみ使用可能です
+- データベースのリセットは慎重に行ってください
+- 採掘時間の設定は24時間形式で指定してください
+"""
+    await interaction.response.send_message(help_text, ephemeral=True)
 
 # Bot起動時に呼び出される関数
 @client.event
