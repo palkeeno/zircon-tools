@@ -227,13 +227,10 @@ async def send_announce():
     try:
         # ランダムにキャラクターを選択
         character = random.choice(characters.CHARACTERS)
-        # 選択したキャラクターのメッセージからランダムに選択
-        message = random.choice(character["messages"])
         
         # キャラクターのembedを作成
-        embed = discord.Embed(description=message)
+        embed = discord.Embed(description=character["messages"])
         embed.set_author(name=character["name"], icon_url=character["icon_url"])
-        embed.set_thumbnail(url=character["thumbnail_url"])
         
         # 採掘ボタン
         button_mine = discord.ui.Button(
