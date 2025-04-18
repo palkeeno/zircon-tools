@@ -181,6 +181,7 @@ async def zmhelp(interaction: discord.Interaction):
 `/zmannounce` - 採掘アナウンスを手動で送信します
 `/zmreset <mining/all>` - データベースをリセットします
 `/zmtime [hours] [minutes]` - 採掘時間を設定します
+`/zmprob [id] [prob] [zirnum]` - 採掘確率とジルコン数を表示・変更します
 `/zmhelp` - このヘルプを表示します
 
 **注意事項**
@@ -189,6 +190,62 @@ async def zmhelp(interaction: discord.Interaction):
 - 採掘時間の設定は24時間形式で指定してください
 """
     await interaction.response.send_message(help_text, ephemeral=True)
+
+@tree.command(name="zmprob", description="採掘確率とジルコン数を表示・変更します")
+@is_admin_channel()
+async def zmprob(
+    interaction: discord.Interaction,
+    id: int = None,
+    prob: float = None,
+    zirnum: int = None
+):
+    # 引数がすべてNoneなら現在の設定を表示
+    if id is None and prob is None and zirnum is None:
+        msg = "【現在の採掘確率・ジルコン数設定】\n"
+        for p in config.PROBABILITY:
+            msg += f"id:{p['id']} [{p['msg']}]  確率: {p['prob']*100}% ({p['prob']}) 以下  ジルコン: {p['zirnum']}\n"
+        await interaction.response.send_message(msg, ephemeral=False)
+        return
+
+    # バリデーション
+    if id not in [0, 1, 2]:
+        await interaction.response.send_message("idは0(Excellent), 1(Great), 2(Good)のみ指定できます。", ephemeral=False)
+        return
+    if prob is None or not (0 <= prob <= 1):
+        await interaction.response.send_message("probは0以上1以下の数値で指定してください。", ephemeral=False)
+        return
+    if zirnum is None or not (isinstance(zirnum, int) and zirnum >= 1):
+        await interaction.response.send_message("zirnumは1以上の整数で指定してください。", ephemeral=False)
+        return
+
+    # id順prob制約
+    # id:0(Excellent) <= id:1(Great) <= id:2(Good)
+    # 例: id=0のprobはid=1のprob以下でなければならない
+    # 変更後のprobを仮定してチェック
+    new_probs = [p['prob'] for p in config.PROBABILITY]
+    new_probs[id] = prob
+    if id == 0 and prob > config.PROBABILITY[1]['prob']:
+        await interaction.response.send_message("id:0(Excellent)のprobはid:1(Great)のprob以下でなければなりません。", ephemeral=False)
+        return
+    if id == 1:
+        if prob < config.PROBABILITY[0]['prob']:
+            await interaction.response.send_message("id:1(Great)のprobはid:0(Excellent)のprob以上でなければなりません。", ephemeral=False)
+            return
+        if prob > config.PROBABILITY[2]['prob']:
+            await interaction.response.send_message("id:1(Great)のprobはid:2(Good)のprob以下でなければなりません。", ephemeral=False)
+            return
+    if id == 2 and prob < config.PROBABILITY[1]['prob']:
+        await interaction.response.send_message("id:2(Good)のprobはid:1(Great)のprob以上でなければなりません。", ephemeral=False)
+        return
+
+    # 設定を更新
+    config.PROBABILITY[id]['prob'] = prob
+    config.PROBABILITY[id]['zirnum'] = zirnum
+
+    msg = "【採掘確率・ジルコン数を更新しました】\n"
+    for p in config.PROBABILITY:
+        msg += f"id:{p['id']} [{p['msg']}]  確率: {p['prob']*100}% ({p['prob']}) 以下  ジルコン: {p['zirnum']}\n"
+    await interaction.response.send_message(msg, ephemeral=False)
 
 # Bot起動時に呼び出される関数
 @client.event
