@@ -11,6 +11,7 @@ from discord import app_commands
 import config
 import consts.cids as cids
 import consts.characters as characters
+from consts.characters import get_random_character
 import consts.const as const
 import consts.sysmsg as SysMsg
 import make_embed
@@ -225,12 +226,15 @@ async def check_announce():
 # 採掘アナウンスを送信
 async def send_announce():
     try:
-        # ランダムにキャラクターを選択
-        character = random.choice(characters.CHARACTERS)
-        
-        # キャラクターのembedを作成
+        # キャラクターとメッセージをランダム取得
+        character = get_random_character()
+        char_id = character["id"]
+        char_name = character["name"]
+        img_path = f"assets_character/{char_id}.png"
+        img_file = discord.File(fp=img_path, filename=f"{char_id}.png")
         embed = discord.Embed(description=character["messages"])
-        embed.set_author(name=character["name"], icon_url=character["icon_url"])
+        embed.set_author(name=char_name, icon_url=f"attachment://{char_id}.png")
+        embed.set_thumbnail(url=f"attachment://{char_id}.png")
         
         # 採掘ボタン
         button_mine = discord.ui.Button(
@@ -256,7 +260,7 @@ async def send_announce():
         view.add_item(button_total)
 
         channel = client.get_channel(config.CHID_MINING)
-        await channel.send(embed=embed, view=view)
+        await channel.send(embed=embed, view=view, file=img_file)
     except Exception as e:
         print(f"アナウンス送信エラー: {e}")
 
