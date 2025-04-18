@@ -2,7 +2,7 @@ import sqlite3
 
 import config
 from models.db_utils import (
-    init_db, get_single_record, upsert_record, reset_db, get_rank, get_current_datetime, handle_db_error
+    init_db, get_single_record, upsert_record, reset_db as reset_db_table, get_rank, get_current_datetime, handle_db_error
 )
 import util
 
@@ -194,4 +194,4 @@ async def get_all_event_stats(guild):
 
 # データベースをリセットする
 async def reset_db():
-    return await reset_db(config.DB_MINING, "MINING")
+    return await reset_db_table(config.DB_MINING, "MINING")
