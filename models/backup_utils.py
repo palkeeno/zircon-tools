@@ -27,7 +27,7 @@ def create_backup() -> List[str]:
 
     return backup_files
 
-def cleanup_old_backups(days_to_keep: int = 7) -> None:
+def cleanup_old_backups(days_to_keep: int = 10) -> None:
     """古いバックアップファイルを削除する
 
     Args:
@@ -38,20 +38,39 @@ def cleanup_old_backups(days_to_keep: int = 7) -> None:
         return
 
     cutoff_date = datetime.datetime.now(JST) - datetime.timedelta(days=days_to_keep)
-    
     for filename in os.listdir(backup_dir):
         file_path = os.path.join(backup_dir, filename)
         file_time = datetime.datetime.fromtimestamp(os.path.getctime(file_path), JST)
-        
         if file_time < cutoff_date:
-            os.remove(file_path)
+            try:
+                os.remove(file_path)
+                print(f"バックアップ削除（期限超過）: {file_path}")
+            except Exception as e:
+                print(f"バックアップ削除失敗: {file_path} {e}")
+
+def cleanup_excess_backups(max_files: int = 10) -> None:
+    """各DBごとにバックアップファイルがmax_files個を超えていたら古いものから削除する"""
+    backup_dir = "backups"
+    for db_name in [os.path.basename(DB_MINING), os.path.basename(DB_USERS)]:
+        prefix = db_name + "_"
+        db_backups = [f for f in os.listdir(backup_dir) if f.startswith(prefix)]
+        if len(db_backups) > max_files:
+            db_backups_sorted = sorted(db_backups)
+            to_delete = db_backups_sorted[:len(db_backups)-max_files]
+            for fname in to_delete:
+                try:
+                    os.remove(os.path.join(backup_dir, fname))
+                    print(f"バックアップ削除（個数超過）: {os.path.join(backup_dir, fname)}")
+                except Exception as e:
+                    print(f"バックアップ削除失敗: {os.path.join(backup_dir, fname)} {e}")
 
 def perform_backup() -> List[str]:
-    """バックアップを実行し、古いバックアップを削除する
+    """バックアップを実行し、古いバックアップ・個数超過バックアップを削除する
 
     Returns:
         List[str]: 作成されたバックアップファイルのパスリスト
     """
     backup_files = create_backup()
     cleanup_old_backups()
-    return backup_files 
+    cleanup_excess_backups()
+    return backup_files
