@@ -41,7 +41,7 @@ async def output_event_stats_csv(interaction: discord.Interaction):
         # CSVファイルを作成
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["順位", "ユーザ名", "メンションID", "国名", "採掘量", "採掘回数", "Excellent回数"])
+        writer.writerow(["順位", "ユーザ名", "メンションID", "国名", "採掘量(今回)", "採掘回数(今回)", "Excellent回数(今回)"])
         
         for i, stat in enumerate(stats, 1):
             writer.writerow([
@@ -79,14 +79,13 @@ async def output_lifetime_stats_csv(interaction: discord.Interaction):
         # CSVファイルを作成
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["順位", "ユーザ名", "メンションID", "国名", "採掘量", "採掘回数", "Excellent回数"])
+        writer.writerow(["順位", "ユーザ名", "メンションID", "採掘量(累積)", "採掘回数(累積)", "Excellent回数(累積)"])
         
         for i, stat in enumerate(stats, 1):
             writer.writerow([
                 i,
                 stat["username"],
                 stat["mention"],
-                stat["country"],
                 stat["lt_total"],
                 stat["m_cnt"],
                 stat["ex_cnt"]
@@ -123,4 +122,4 @@ class RankView(discord.ui.View):
         
     @discord.ui.button(label="累積統計出力", style=discord.ButtonStyle.secondary)
     async def lifetime_stats(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await output_lifetime_stats_csv(interaction) 
+        await output_lifetime_stats_csv(interaction)

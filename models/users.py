@@ -144,13 +144,6 @@ async def get_all_lifetime_stats(guild):
             # 統計情報のリストを作成
             stats = []
             for userid, lt_total, m_cnt, ex_cnt in results:
-                # 国情報を取得
-                country = "不明"
-                for c in config.COUNTRIES:
-                    if userid == c["id"]:
-                        country = c["name"]
-                        break
-                
                 # ユーザー情報を取得
                 user = guild.get_member(userid)
                 username = user.display_name if user else "不明"
@@ -160,7 +153,6 @@ async def get_all_lifetime_stats(guild):
                     "user_id": userid,
                     "username": username,
                     "mention": mention,
-                    "country": country,
                     "lt_total": lt_total,
                     "m_cnt": m_cnt,
                     "ex_cnt": ex_cnt
