@@ -338,6 +338,11 @@ async def mining_zircon(interaction: discord.Interaction):
             )
             return
         country = util.get_country(interaction.user)
+        if country is None:
+            await interaction.response.send_message(
+                content="国選択をした方のみ参加できます！", ephemeral=True
+            )
+            return
         # DBのレコードを見て採掘済みかチェック
         ures = await mining.get_user_single(interaction.user.id, country["role"])
         if ures is not None:
@@ -399,6 +404,11 @@ async def mining_zircon(interaction: discord.Interaction):
 async def get_stats_self(interaction: discord.Interaction):
     try:
         country = util.get_country(interaction.user)
+        if country is None:
+            await interaction.response.send_message(
+                content="国選択をした方のみ参加できます！", ephemeral=True
+            )
+            return
         # 基本採掘情報を取得
         result_mining = await mining.get_user_single(interaction.user.id, country["role"])
         result_lifetime = await users.get_single(interaction.user.id)
@@ -434,6 +444,11 @@ async def get_stats_self(interaction: discord.Interaction):
 async def get_stats_country(interaction: discord.Interaction):
     try:
         country = util.get_country(interaction.user)
+        if country is None:
+            await interaction.response.send_message(
+                content="国選択をした方のみ参加できます！", ephemeral=True
+            )
+            return
         # 国統計データを取得
         result_country = await mining.get_country_single(country["role"])
         if result_country is None:
