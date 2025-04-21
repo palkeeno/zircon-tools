@@ -38,13 +38,12 @@ CHARACTERS_MESSAGE = {
     ],
     "ヒシカリ・ロックハート": [
         "今日の鉱山はジルコンの宝箱だ〜！ :moneybag:",
-        "ここは鉱石たちの四大国連合や〜！ :wave:",
         "皆さんたくさん採掘して下さいね！そのあと調味鉱石採ろうかね :salt:",
     ],
     "ロック・ブレイク": [
         "今日も鉱石がみんなを呼んでいるぞ！ :fire:",
         "鉱山王に俺はなる！みんなもついてきな！ :fist:",
-        "マイニング・マスターお墨付きの鉱山だよ :sparkles:",
+        "ここはマイニング・マスターお墨付きの鉱山だよ :sparkles:",
     ],
     "シャーリィ・ローズ": [
         "みなさんの採掘環境は私が守ります！ :helmet_with_cross:",
@@ -53,7 +52,7 @@ CHARACTERS_MESSAGE = {
     ],
     "メイリン": [
         "今日こそ希少な鉱石見つけましょう！ :gem:",
-        "この鉱山は虫が居ないので安心して採掘できます！ :insect:",
+        "この鉱山は虫が居ないので安心して採掘できます！ :bee:",
     ],
     "セティオ": [
         "義父から学んだジルコン鉱山の守護の心得がある。安心して採掘してくれ。 :gem:",
@@ -135,7 +134,11 @@ CHARACTERS_MESSAGE = {
 import random
 
 def get_random_character():
-    char = random.choice(CHARACTERS_LIST)
-    name = char["name"]
-    msg = random.choice(CHARACTERS_MESSAGE[name])
-    return {"id": char["id"], "name": name, "messages": msg}
+    # 全キャラの全セリフをキャラごとに展開し、重み付きランダムにする
+    all_entries = []
+    for char in CHARACTERS_LIST:
+        name = char["name"]
+        cid = char["id"]
+        for msg in CHARACTERS_MESSAGE[name]:
+            all_entries.append({"id": cid, "name": name, "messages": msg})
+    return random.choice(all_entries)
