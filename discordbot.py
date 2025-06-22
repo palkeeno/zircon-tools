@@ -1,6 +1,7 @@
 import asyncio
 import os
 import random
+import json
 from datetime import datetime
 
 import discord
@@ -20,6 +21,10 @@ import models.users as users
 import util
 from views import MineStatusView, RankView, ResetConfirmView
 from models.backup_utils import perform_backup
+from role_manager import RoleProbabilityManager
+
+# グローバルインスタンス
+role_manager = RoleProbabilityManager()
 
 # init
 os.chdir(config.CWD)
@@ -168,6 +173,123 @@ async def zmtime(interaction: discord.Interaction, hours: str = None, minutes: s
             ephemeral=False
         )
 
+@tree.command(name="zmrole", description="ロール別採掘確率を設定します")
+@is_admin_channel()
+async def zmrole(
+    interaction: discord.Interaction,
+    role: discord.Role = None,
+    great_prob: int = None,
+    excellent_prob: int = None,
+    priority: int = None
+):
+    try:
+        # Case 1: 引数なし -> 一覧表示
+        if role is None:
+            if not role_manager.cache:
+                await interaction.response.send_message("設定されているロール別確率はありません。", ephemeral=False)
+                return
+
+            sorted_roles = sorted(role_manager.cache, key=lambda x: x['priority'])
+            msg = "【現在のロール別採掘確率設定】\n\n"
+            for r_info in sorted_roles:
+                good_prob = 100 - r_info['great_prob'] - r_info['excellent_prob']
+                msg += f"**{r_info['priority']}. {r_info['role_name']}**\n"
+                msg += f"   Great: {r_info['great_prob']}% | Excellent: {r_info['excellent_prob']}% | Good: {good_prob}%\n\n"
+            
+            msg += "設定方法: `/zmrole [ロール名] [Great確率] [Excellent確率] [優先度]`\n"
+            msg += "削除方法: `/zmrole [ロール名]`\n"
+            msg += "優先度変更: `/zmrole [ロール名] 0 0 [優先度]`"
+            await interaction.response.send_message(msg, ephemeral=False)
+            return
+
+        role_name = role.name
+        
+        # Case 2: 優先度のみ変更
+        if great_prob == 0 and excellent_prob == 0 and priority is not None:
+            if priority < 1:
+                await interaction.response.send_message("優先度は1以上の整数で指定してください。", ephemeral=False)
+                return
+            
+            target_role = next((r for r in role_manager.cache if r['role_name'] == role_name), None)
+            if not target_role:
+                await interaction.response.send_message(f"ロール「{role_name}」の設定が見つかりません。", ephemeral=False)
+                return
+
+            role_manager.update_priorities(role_name, priority)
+            role_manager.save()
+            await interaction.response.send_message(f"ロール「{role_name}」の優先度を{priority}に変更しました。", ephemeral=False)
+            return
+
+        # Case 3: 設定削除
+        if great_prob is None and excellent_prob is None and priority is None:
+            initial_len = len(role_manager.cache)
+            role_manager.cache = [r for r in role_manager.cache if r['role_name'] != role_name]
+            if len(role_manager.cache) < initial_len:
+                role_manager.save()
+                await interaction.response.send_message(f"ロール「{role_name}」の設定を削除しました。", ephemeral=False)
+            else:
+                await interaction.response.send_message(f"ロール「{role_name}」の設定が見つかりません。", ephemeral=False)
+            return
+            
+        # Case 4 & 5: 新規追加 or 更新 (確率の指定が必須)
+        if great_prob is None or excellent_prob is None:
+             await interaction.response.send_message("確率を設定・更新する場合は、Great確率とExcellent確率の両方を指定してください。", ephemeral=False)
+             return
+
+        # --- Validation for Add/Update ---
+        if not (0 <= great_prob <= 100 and 0 <= excellent_prob <= 100):
+            await interaction.response.send_message("確率は0-100の整数で指定してください。", ephemeral=False)
+            return
+        if (great_prob + excellent_prob) > 100:
+            await interaction.response.send_message("Great確率とExcellent確率の合計が100%を超えています。", ephemeral=False)
+            return
+        if priority is not None and priority < 1:
+            await interaction.response.send_message("優先度は1以上の整数で指定してください。", ephemeral=False)
+            return
+
+        # --- Add or Update Logic ---
+        target_role = next((r for r in role_manager.cache if r['role_name'] == role_name), None)
+        action_msg = ""
+        if target_role:
+            # 更新
+            action_msg = "更新"
+            target_role['great_prob'] = great_prob
+            target_role['excellent_prob'] = excellent_prob
+            target_role['updated_at'] = datetime.now().isoformat()
+            if priority is not None:
+                role_manager.update_priorities(role_name, priority)
+        else:
+            # 追加
+            action_msg = "追加"
+            new_priority = role_manager.get_next_priority()
+            
+            new_role_data = {
+                'role_name': role_name,
+                'great_prob': great_prob,
+                'excellent_prob': excellent_prob,
+                'priority': new_priority, # まず末尾に追加
+                'created_at': datetime.now().isoformat(),
+                'updated_at': datetime.now().isoformat()
+            }
+            role_manager.cache.append(new_role_data)
+            if priority is not None:
+                role_manager.update_priorities(role_name, priority)
+
+        role_manager.save()
+        good_prob = 100 - great_prob - excellent_prob
+        final_priority = next((r['priority'] for r in role_manager.cache if r['role_name'] == role_name), 'N/A')
+
+        await interaction.response.send_message(
+            f"ロール「{role_name}」の設定を{action_msg}しました。\n"
+            f"Great: {great_prob}% | Excellent: {excellent_prob}% | Good: {good_prob}%\n"
+            f"優先度: {final_priority}",
+            ephemeral=False
+        )
+        
+    except Exception as e:
+        print(f"ロール確率設定エラー: {e}")
+        await interaction.response.send_message("ロール確率設定中にエラーが発生しました。", ephemeral=False)
+
 @tree.command(name="zmhelp", description="運営向けのヘルプを表示します")
 @is_admin_channel()
 async def zmhelp(interaction: discord.Interaction):
@@ -182,12 +304,14 @@ async def zmhelp(interaction: discord.Interaction):
 `/zmreset <mining/all>` - データベースをリセットします
 `/zmtime [hours] [minutes]` - 採掘時間を設定します
 `/zmprob [id] [prob] [zirnum]` - 採掘確率とジルコン数を表示・変更します
+`/zmrole [ロール名] [Great確率] [Excellent確率] [優先度]` - ロール別採掘確率を設定します
 `/zmhelp` - このヘルプを表示します
 
 **注意事項**
 - すべてのコマンドは管理チャンネルでのみ使用可能です
 - データベースのリセットは慎重に行ってください
 - 採掘時間の設定は24時間形式で指定してください
+- ロール別確率は共通確率より優先されます
 """
     await interaction.response.send_message(help_text, ephemeral=True)
 
@@ -351,8 +475,12 @@ async def mining_zircon(interaction: discord.Interaction):
                     content=SysMsg.ONCE_MINING, ephemeral=True
                 )
                 return
+        
+        # ロール別確率を取得
+        user_probability = role_manager.get_user_probability(interaction.user, config.PROBABILITY)
+        
         # 採掘ガチャ
-        result = util.gacha(random.random(), config.PROBABILITY)
+        result = util.gacha(random.random(), user_probability)
         # 採掘結果がエクセレントかどうか判定
         isExcellent = result["id"] == 0
         # 採掘結果をDBに保存して、メッセージを送信
@@ -400,7 +528,7 @@ async def mining_zircon(interaction: discord.Interaction):
         )
 
 
-# 自身の統計量（採掘数、採掘回数、Ex数、自身のRank）を表示するアクション
+# 自身の統計量表示アクション
 async def get_stats_self(interaction: discord.Interaction):
     try:
         country = util.get_country(interaction.user)
@@ -425,11 +553,23 @@ async def get_stats_self(interaction: discord.Interaction):
             if r[1] == interaction.user.id:  # r[1]はuserid
                 rank_self = r[0]  # r[0]はrank
                 break
+        
+        # 適用ロールを取得
+        applicable_role = role_manager.get_applicable_role(interaction.user)
                 
         # embed作成して返信
         embed = make_embed.stats_self(
             result_mining, result_lifetime, interaction.user, rank_self
         )
+        
+        # 適用ロールがある場合は表示
+        if applicable_role:
+            embed.add_field(
+                name="適用ロール",
+                value=f"🎭 {applicable_role['role_name']}",
+                inline=False
+            )
+        
         await interaction.response.send_message(embed=embed, ephemeral=True)
     except Exception as e:
         print(f"統計表示エラー: {e}")
@@ -538,4 +678,4 @@ async def schedule_backup():
         print(f"バックアップ中にエラーが発生しました: {e}")
 
 # Bot起動
-client.run(config.DISCORD_TOKEN)
+client.run(config.DISCORD_TOKEN) 
