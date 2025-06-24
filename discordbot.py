@@ -193,10 +193,10 @@ async def zmrole(
             msg = "【現在のロール別採掘確率設定】\n\n"
             for r_info in sorted_roles:
                 good_prob = 100 - r_info['great_prob'] - r_info['excellent_prob']
-                msg += f"**{r_info['priority']}. {r_info['role_name']}**\n"
-                msg += f"   Great: {r_info['great_prob']}% | Excellent: {r_info['excellent_prob']}% | Good: {good_prob}%\n\n"
+                msg += f"**{r_info['priority']}. {r_info['role_name']}**"
+                msg += f"   Great: {r_info['great_prob']}% | Excellent: {r_info['excellent_prob']}% | Good: {good_prob}%\n"
             
-            msg += "設定方法: `/zmrole [ロール名] [Great確率] [Excellent確率] [優先度]`\n"
+            msg += "\n設定方法: `/zmrole [ロール名] [Great確率] [Excellent確率] [優先度]`\n"
             msg += "削除方法: `/zmrole [ロール名]`\n"
             msg += "優先度変更: `/zmrole [ロール名] 0 0 [優先度]`"
             await interaction.response.send_message(msg, ephemeral=False)
