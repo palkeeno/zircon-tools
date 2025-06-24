@@ -61,8 +61,8 @@ class RoleProbabilityManager:
         good_prob = (100 - applicable_role['great_prob'] - applicable_role['excellent_prob']) / 100
         
         return [
-            {'id': 0, 'prob': excellent_prob, 'msg': 'Excellent!!', 'zirnum': base_probability[0]['zirnum']},
-            {'id': 1, 'prob': excellent_prob + great_prob, 'msg': 'Great!', 'zirnum': base_probability[1]['zirnum']},
+            {'id': 0, 'prob': excellent_prob, 'msg': 'Excellent', 'zirnum': base_probability[0]['zirnum']},
+            {'id': 1, 'prob': excellent_prob + great_prob, 'msg': 'Great', 'zirnum': base_probability[1]['zirnum']},
             {'id': 2, 'prob': 1.0, 'msg': 'Good', 'zirnum': base_probability[2]['zirnum']}
         ]
     

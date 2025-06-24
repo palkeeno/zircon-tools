@@ -508,8 +508,8 @@ async def mining_zircon(interaction: discord.Interaction):
             fp=f"{config.CWD}/assets/{fn_img}",
             filename=fn_img,
         )
-        ures = await mining.get_user_single(interaction.user.id, country["role"])
-        em2 = make_embed.mining(result, interaction.user, ures[3], fn_img)
+        total = ures[3] if ures is not None else result["zirnum"]
+        em2 = make_embed.mining(result, interaction.user, total, fn_img)
         await mining_msg.delete()
         await interaction.followup.send(embed=em2, file=img_mresult, ephemeral=True)
         # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
