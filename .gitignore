@@ -4,6 +4,7 @@
 prd/
 csv/
 backups/
+data/
 .trunk/
 
 # Byte-compiled / optimized / DLL files
