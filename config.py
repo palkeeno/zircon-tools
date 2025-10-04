@@ -10,6 +10,9 @@ if ENV == "production":
 else:
     load_dotenv(".env.development")
 
+# 設定マネージャーのインポート
+from settings_manager import settings_manager
+
 #### Load Env (Sensitive Information) ####
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DB_MINING = os.getenv("DB_MINING")
@@ -37,19 +40,15 @@ FREEDOM_EMOJI = os.getenv("FREEDOM_EMOJI")
 GLORY_EMOJI = os.getenv("GLORY_EMOJI")
 PEACEFUL_EMOJI = os.getenv("PEACEFUL_EMOJI")
 
-# mining flag
-MINE_OPEN = True
+# mining flag (設定マネージャーから取得)
+MINE_OPEN = settings_manager.get_mine_open()
 
-# announce clock
-ANN_HOUR = [0, 12]
-ANN_MINUTE = [0]
+# announce clock (設定マネージャーから取得)
+ANN_HOUR = settings_manager.get_announce_hour()
+ANN_MINUTE = settings_manager.get_announce_minute()
 
-# mining probability
-PROBABILITY = [
-    {'id':0,    'msg':'Excellent',    'prob':0.03,    'zirnum':10},
-    {'id':1,    'msg':'Great',         'prob':0.25,    'zirnum':3},
-    {'id':2,    'msg':'Good',           'prob':1,       'zirnum':1}
-]
+# mining probability (設定マネージャーから取得)
+PROBABILITY = settings_manager.get_probability()
 
 # country roles id
 COUNTRIES = [
@@ -58,3 +57,20 @@ COUNTRIES = [
     {'id':3, 'role':GLORY_ROLE, 'name':'Glory',    'chid':GLORY_CHAT,    'stmp':GLORY_EMOJI}, # glory
     {'id':4, 'role':PEACEFUL_ROLE, 'name':'Peaceful', 'chid':PEACEFUL_CHAT,    'stmp':PEACEFUL_EMOJI}  # peaceful
 ]
+
+# 設定値を動的に取得する関数
+def get_mine_open():
+    """鉱山の営業状況を動的に取得"""
+    return settings_manager.get_mine_open()
+
+def get_announce_hour():
+    """アナウンス時間の時を動的に取得"""
+    return settings_manager.get_announce_hour()
+
+def get_announce_minute():
+    """アナウンス時間の分を動的に取得"""
+    return settings_manager.get_announce_minute()
+
+def get_probability():
+    """採掘確率設定を動的に取得"""
+    return settings_manager.get_probability()

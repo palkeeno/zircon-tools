@@ -22,6 +22,7 @@ import util
 from views import MineStatusView, RankView, ResetConfirmView
 from models.backup_utils import perform_backup
 from role_manager import RoleProbabilityManager
+from settings_manager import settings_manager
 
 # グローバルインスタンス
 role_manager = RoleProbabilityManager()
@@ -44,7 +45,7 @@ def is_admin_channel():
 async def zmst(interaction: discord.Interaction):
     view = MineStatusView()
     await interaction.response.send_message(
-        f"現在の営業状況: {mine_status(config.MINE_OPEN)}\n変更する場合は下のボタンを押してください。",
+        f"現在の営業状況: {mine_status(config.get_mine_open())}\n変更する場合は下のボタンを押してください。",
         view=view,
         ephemeral=False
     )
@@ -95,8 +96,11 @@ async def zmmsg(interaction: discord.Interaction, message: str):
 @is_admin_channel()
 async def zmannounce(interaction: discord.Interaction):
     try:
+        # 採掘済みフラグを全員からリセット
+        await mining.undo_done_flag()
+        # アナウンスを送信
         await send_announce()
-        await interaction.response.send_message("アナウンスを送信しました", ephemeral=False)
+        await interaction.response.send_message("採掘済みフラグをリセットしてアナウンスを送信しました", ephemeral=False)
     except Exception as e:
         print(f"アナウンス送信エラー: {e}")
         await interaction.response.send_message(
@@ -126,8 +130,8 @@ async def zmreset(interaction: discord.Interaction, reset_type: str):
 async def zmtime(interaction: discord.Interaction, hours: str = None, minutes: str = None):
     # 引数なしの場合は現在の設定を表示
     if hours is None and minutes is None:
-        current_hours = config.ANN_HOUR
-        current_minutes = config.ANN_MINUTE
+        current_hours = config.get_announce_hour()
+        current_minutes = config.get_announce_minute()
         
         # 時間を整形して表示
         hours_str = ", ".join(map(str, current_hours))
@@ -154,8 +158,8 @@ async def zmtime(interaction: discord.Interaction, hours: str = None, minutes: s
             raise ValueError("分は0-59の範囲で指定してください")
         
         # 設定を更新
-        config.ANN_HOUR = hours_list
-        config.ANN_MINUTE = minutes_list
+        settings_manager.set_announce_hour(hours_list)
+        settings_manager.set_announce_minute(minutes_list)
         
         await interaction.response.send_message(
             f"採掘時間を設定しました\n時間: {hours_list}\n分: {minutes_list}",
@@ -324,7 +328,7 @@ async def zmprob(
     zirnum: int = None
 ):
     def get_current_probs_percent():
-        thresholds = [p['prob'] for p in config.PROBABILITY]
+        thresholds = [p['prob'] for p in config.get_probability()]
         actuals = [0, 0, 0]
         actuals[0] = round(thresholds[0] * 100, 2)
         actuals[1] = round((thresholds[1] - thresholds[0]) * 100, 2)
@@ -334,7 +338,7 @@ async def zmprob(
     if id is None and prob is None and zirnum is None:
         probs = get_current_probs_percent()
         msg = "【現在の採掘確率・ジルコン数設定】\n"
-        for i, p in enumerate(config.PROBABILITY):
+        for i, p in enumerate(config.get_probability()):
             msg += f"id:{p['id']} [{p['msg']}]  発生確率: {probs[i]}%  ジルコン: {p['zirnum']}\n"
         await interaction.response.send_message(msg, ephemeral=False)
         return
@@ -365,13 +369,18 @@ async def zmprob(
     thresholds[1] = (new_probs[0] + new_probs[1]) / 100
     thresholds[2] = 1.0
 
-    for i, p in enumerate(config.PROBABILITY):
+    # 確率設定を更新
+    probability = config.get_probability()
+    for i, p in enumerate(probability):
         p['prob'] = thresholds[i]
         if i == id and zirnum is not None:
             p['zirnum'] = zirnum
+    
+    # 設定マネージャーに保存
+    settings_manager.set_probability(probability)
 
     msg = "【採掘確率・ジルコン数を更新しました】\n"
-    for i, p in enumerate(config.PROBABILITY):
+    for i, p in enumerate(probability):
         msg += f"id:{p['id']} [{p['msg']}]  発生確率: {new_probs[i]}%  ジルコン: {p['zirnum']}\n"
     await interaction.response.send_message(msg, ephemeral=False)
 
@@ -399,9 +408,9 @@ async def check_announce():
     try:
         now = datetime.now(const.JST)
         # 鉱山オープンフラグがFalseならアナウンスが流れない
-        if not config.MINE_OPEN:
+        if not config.get_mine_open():
             return
-        if (now.hour in config.ANN_HOUR) and (now.minute in config.ANN_MINUTE):
+        if (now.hour in config.get_announce_hour()) and (now.minute in config.get_announce_minute()):
             await mining.undo_done_flag()
             await send_announce()
     except Exception as e:
@@ -456,7 +465,7 @@ async def send_announce():
 # ジルコン採掘アクション
 async def mining_zircon(interaction: discord.Interaction):
     try:
-        if not config.MINE_OPEN:
+        if not config.get_mine_open():
             await interaction.response.send_message(
                 content=SysMsg.MINE_CLOSED, ephemeral=True
             )
@@ -477,7 +486,7 @@ async def mining_zircon(interaction: discord.Interaction):
                 return
         
         # ロール別確率を取得
-        user_probability = role_manager.get_user_probability(interaction.user, config.PROBABILITY)
+        user_probability = role_manager.get_user_probability(interaction.user, config.get_probability())
         
         # 採掘ガチャ
         result = util.gacha(random.random(), user_probability)
@@ -633,7 +642,7 @@ async def get_stats_country(interaction: discord.Interaction):
 ### 以下は運営コマンド
 
 def mine_status(isMineOpen):
-    return "OPEN" if config.MINE_OPEN else "CLOSE"
+    return "OPEN" if isMineOpen else "CLOSE"
 
 # ボタンIDと処理関数のマッピング
 BUTTON_HANDLERS = {
@@ -669,7 +678,7 @@ async def schedule_backup():
     """24時間ごとにバックアップを実行する（鉱山がOPENの場合のみ）"""
     try:
         # 鉱山がOPENの場合のみバックアップを実行
-        if config.MINE_OPEN:
+        if config.get_mine_open():
             backup_files = perform_backup()
             print(f"バックアップが完了しました: {backup_files}")
         else:
