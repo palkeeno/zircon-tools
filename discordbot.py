@@ -517,7 +517,7 @@ async def mining_zircon(interaction: discord.Interaction):
             fp=f"{config.CWD}/assets/{fn_img}",
             filename=fn_img,
         )
-        total = ures[3] if ures is not None else result["zirnum"]
+        total = (ures[3] if ures is not None else 0) + result["zirnum"]
         em2 = make_embed.mining(result, interaction.user, total, fn_img)
         await mining_msg.delete()
         await interaction.followup.send(embed=em2, file=img_mresult, ephemeral=True)
