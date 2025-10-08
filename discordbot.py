@@ -481,7 +481,7 @@ async def mining_zircon(interaction: discord.Interaction):
         if ures is not None:
             if bool(ures[6]):  # ures[6]=done_flag
                 await interaction.response.send_message(
-                    content=SysMsg.ONCE_MINING, ephemeral=True
+                    content=SysMsg.get_once_mining_message(), ephemeral=True
                 )
                 return
         
