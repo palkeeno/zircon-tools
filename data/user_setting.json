@@ -1,5 +1,5 @@
 {
-    "mine_open": true,
+    "mine_open": false,
     "announce_hour": [0, 12],
     "announce_minute": [0],
     "probability": [
@@ -8,4 +8,8 @@
         {"id": 2, "msg": "Good", "prob": 1, "zirnum": 1}
     ]
 }
+
+
+
+
 
