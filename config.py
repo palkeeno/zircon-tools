@@ -40,15 +40,6 @@ FREEDOM_EMOJI = os.getenv("FREEDOM_EMOJI")
 GLORY_EMOJI = os.getenv("GLORY_EMOJI")
 PEACEFUL_EMOJI = os.getenv("PEACEFUL_EMOJI")
 
-# mining flag (設定マネージャーから取得)
-MINE_OPEN = settings_manager.get_mine_open()
-
-# announce clock (設定マネージャーから取得)
-ANN_HOUR = settings_manager.get_announce_hour()
-ANN_MINUTE = settings_manager.get_announce_minute()
-
-# mining probability (設定マネージャーから取得)
-PROBABILITY = settings_manager.get_probability()
 
 # country roles id
 COUNTRIES = [
