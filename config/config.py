@@ -11,7 +11,10 @@ else:
     load_dotenv(".env.development")
 
 # 設定マネージャーのインポート
-from settings_manager import settings_manager
+from config.settings_manager import SettingsManager
+
+# 設定マネージャーのインスタンスを作成
+settings = SettingsManager()
 
 #### Load Env (Sensitive Information) ####
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -52,16 +55,16 @@ COUNTRIES = [
 # 設定値を動的に取得する関数
 def get_mine_open():
     """鉱山の営業状況を動的に取得"""
-    return settings_manager.get_mine_open()
+    return settings.get_mine_open()
 
 def get_announce_hour():
     """アナウンス時間の時を動的に取得"""
-    return settings_manager.get_announce_hour()
+    return settings.get_announce_hour()
 
 def get_announce_minute():
     """アナウンス時間の分を動的に取得"""
-    return settings_manager.get_announce_minute()
+    return settings.get_announce_minute()
 
 def get_probability():
     """採掘確率設定を動的に取得"""
-    return settings_manager.get_probability()
+    return settings.get_probability()

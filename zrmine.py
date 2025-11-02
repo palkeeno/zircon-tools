@@ -1,7 +1,4 @@
-import asyncio
 import os
-import random
-import json
 from datetime import datetime
 
 import discord
@@ -9,20 +6,19 @@ from discord.ext import tasks
 from discord import app_commands
 
 # made for this prj
-import config
+import config.config as config
 import consts.cids as cids
-import consts.characters as characters
 from consts.characters import get_random_character
 import consts.const as const
-import consts.sysmsg as SysMsg
-import make_embed
 import models.mining as mining
 import models.users as users
-import util
+from utils import helpers
 from views import MineStatusView, RankView, ResetConfirmView
-from models.backup_utils import perform_backup
-from role_manager import RoleProbabilityManager
-from settings_manager import settings_manager
+from utils.backup import perform_backup
+from config.role_manager import RoleProbabilityManager
+from config.settings_manager import settings_manager
+from services.mining_service import mining_zircon
+from services.stats_service import get_stats_self, get_stats_country
 
 # グローバルインスタンス
 role_manager = RoleProbabilityManager()
@@ -64,7 +60,7 @@ async def zmrank(interaction: discord.Interaction):
 @is_admin_channel()
 async def zmadd(interaction: discord.Interaction, amount: int, user: discord.Member):
     try:
-        country = util.get_country(user)
+        country = helpers.get_country(user)
         await mining.upsert(user.id, country["role"], amount, False)
         await users.upsert(user.id, amount, False)
         await interaction.response.send_message(
@@ -462,181 +458,6 @@ async def send_announce():
 ### 国未所属チェックはDiscordチャンネル側で設定
 
 
-# ジルコン採掘アクション
-async def mining_zircon(interaction: discord.Interaction):
-    try:
-        if not config.get_mine_open():
-            await interaction.response.send_message(
-                content=SysMsg.MINE_CLOSED, ephemeral=True
-            )
-            return
-        country = util.get_country(interaction.user)
-        if country is None:
-            await interaction.response.send_message(
-                content="国選択をした方のみ参加できます！", ephemeral=True
-            )
-            return
-        # DBのレコードを見て採掘済みかチェック
-        ures = await mining.get_user_single(interaction.user.id, country["role"])
-        if ures is not None:
-            if bool(ures[6]):  # ures[6]=done_flag
-                await interaction.response.send_message(
-                    content=SysMsg.get_once_mining_message(), ephemeral=True
-                )
-                return
-        
-        # ロール別確率を取得
-        user_probability = role_manager.get_user_probability(interaction.user, config.get_probability())
-        
-        # 採掘ガチャ
-        result = util.gacha(random.random(), user_probability)
-        # 採掘結果がエクセレントかどうか判定
-        isExcellent = result["id"] == 0
-        # 採掘結果をDBに保存して、メッセージを送信
-        await mining.upsert(interaction.user.id, country["role"], result["zirnum"], isExcellent)
-        await users.upsert(interaction.user.id, result["zirnum"], isExcellent)
-
-        await interaction.response.defer(thinking=True, ephemeral=True)
-
-        # ガチャ演出のランダム化 random_performance_key, performance_num
-        rpk = random.randint(1,100)
-        pn_gif = int(rpk % 4)
-        # ガチャ演出の表示
-        fn_gif=f"mining{pn_gif}.gif"
-        gif_mining = discord.File(
-            fp=f"./assets/{fn_gif}",
-            filename=fn_gif
-        )
-        em1 = make_embed.mining_performance(interaction.user, fn_gif)
-        mining_msg = await interaction.followup.send(embed=em1, file=gif_mining, ephemeral=True)
-        await asyncio.sleep(3)
-
-        pn_img = int(rpk % (result["id"] + 3))
-        fn_img = f"{result['msg']}{pn_img}.png"
-        img_mresult = discord.File(
-            fp=f"{config.CWD}/assets/{fn_img}",
-            filename=fn_img,
-        )
-        total = (ures[3] if ures is not None else 0) + result["zirnum"]
-        em2 = make_embed.mining(result, interaction.user, total, fn_img)
-        await mining_msg.delete()
-        await interaction.followup.send(embed=em2, file=img_mresult, ephemeral=True)
-        # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
-        if isExcellent:
-            exc_embed = make_embed.excellent(interaction.user)
-            channel = client.get_channel(country["chid"])
-            img_ex = discord.File(
-                fp=f"{config.CWD}/assets/{const.EX_CELEB}",
-                filename=f"{const.EX_CELEB}",
-            )
-            await channel.send(file=img_ex, embed=exc_embed)
-    except Exception as e:
-        print(f"採掘処理エラー: {e}")
-        await interaction.response.send_message(
-            content="採掘処理中にエラーが発生しました。", ephemeral=True
-        )
-
-
-# 自身の統計量表示アクション
-async def get_stats_self(interaction: discord.Interaction):
-    try:
-        country = util.get_country(interaction.user)
-        if country is None:
-            await interaction.response.send_message(
-                content="国選択をした方のみ参加できます！", ephemeral=True
-            )
-            return
-        # 基本採掘情報を取得
-        result_mining = await mining.get_user_single(interaction.user.id, country["role"])
-        result_lifetime = await users.get_single(interaction.user.id)
-        if result_lifetime is None:
-            await interaction.response.send_message(SysMsg.DATA_NOT_FOUND, ephemeral=True)
-            return
-        elif result_mining is None:
-            result_mining = [int(interaction.user.id), country["id"], 0, 0, 0, 0, 0]
-        
-        # 自分のランクを取得
-        rank_list = await mining.get_rank_user_country(country["role"])
-        rank_self = 0
-        for r in rank_list:
-            if r[1] == interaction.user.id:  # r[1]はuserid
-                rank_self = r[0]  # r[0]はrank
-                break
-        
-        # 適用ロールを取得
-        applicable_role = role_manager.get_applicable_role(interaction.user)
-                
-        # embed作成して返信
-        embed = make_embed.stats_self(
-            result_mining, result_lifetime, interaction.user, rank_self
-        )
-        
-        # 適用ロールがある場合は表示
-        if applicable_role:
-            embed.add_field(
-                name="適用ロール",
-                value=f"🎭 {applicable_role['role_name']}",
-                inline=False
-            )
-        
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-    except Exception as e:
-        print(f"統計表示エラー: {e}")
-        if not interaction.response.is_done():
-            await interaction.response.send_message(
-                content="統計情報の取得中にエラーが発生しました。",
-                ephemeral=True
-            )
-
-
-# 所属国の統計量（採掘数、採掘回数、ランキングTop10）を表示するアクション
-async def get_stats_country(interaction: discord.Interaction):
-    try:
-        country = util.get_country(interaction.user)
-        if country is None:
-            await interaction.response.send_message(
-                content="国選択をした方のみ参加できます！", ephemeral=True
-            )
-            return
-        # 国統計データを取得
-        result_country = await mining.get_country_single(country["role"])
-        if result_country is None:
-            result_country = (country["role"], 0, 0)
-
-        # ランク情報の取得
-        result_rank = await mining.get_rank_user_country(country["role"])
-        # 自分の順位を取得
-        rank_self = 0
-        for r in result_rank:
-            if r[1] == interaction.user.id:  # r[1]はuserid
-                rank_self = r[0]  # r[0]はrank
-                break
-                
-        # TOP10を取得
-        formatted_rank = []
-        for r in result_rank[:10]:  # 上位10件のみ取得
-            user = interaction.guild.get_member(r[1])  # r[1]はuserid
-            formatted_rank.append([
-                r[0],  # rank
-                user.display_name if user is not None else "None",  # ユーザー名
-                r[2]  # zirnum（採掘量）
-            ])
-
-        flag_of_country = discord.File(
-            fp=f"{config.CWD}/assets/{country['name']}.jpg",
-            filename=f"{country['name']}.jpg",
-        )
-        embed = make_embed.stats_country(
-            result_country, country["name"], formatted_rank, rank_self
-        )
-        await interaction.response.send_message(
-            file=flag_of_country, embed=embed, ephemeral=True
-        )
-    except Exception as e:
-        print(f"国統計表示エラー: {e}")
-        await interaction.response.send_message(
-            content="国統計情報の取得中にエラーが発生しました。", ephemeral=True
-        )
 
 
 ### 以下は運営コマンド
@@ -646,7 +467,7 @@ def mine_status(isMineOpen):
 
 # ボタンIDと処理関数のマッピング
 BUTTON_HANDLERS = {
-    cids.MINING_ZIRCON: mining_zircon,
+    cids.MINING_ZIRCON: lambda interaction: mining_zircon(interaction, client),
     cids.COUNTRY_STATS: get_stats_country,
     cids.SELF_STATS: get_stats_self
 }

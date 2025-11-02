@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any
 
 class SettingsManager:
     """設定値を管理するクラス"""
@@ -48,7 +48,6 @@ class SettingsManager:
         try:
             # ディレクトリが存在しない場合は作成
             os.makedirs(os.path.dirname(self.settings_file), exist_ok=True)
-            
             with open(self.settings_file, 'w', encoding='utf-8') as f:
                 json.dump(self._settings, f, ensure_ascii=False, indent=4)
         except Exception as e:

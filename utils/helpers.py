@@ -2,7 +2,7 @@ import csv
 import traceback
 from datetime import datetime
 
-import config
+import config.config as config
 
 
 # エラーハンドリング関数

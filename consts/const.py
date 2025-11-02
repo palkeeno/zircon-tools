@@ -1,6 +1,6 @@
 from datetime import timedelta, timezone
 
-from config import CWD
+import config.config as config
 
 # timezone
 JST = timezone(timedelta(hours=+9), "JST")
@@ -37,7 +37,7 @@ RANK_HEADER_LIFETIME = [
 EX_CELEB = "ex_celebrate.png"
 
 # folder path
-CSV_FOLDER = CWD + "/csv/"
+CSV_FOLDER = config.CWD + "/csv/"
 
 # exetention
 CSV = ".csv"

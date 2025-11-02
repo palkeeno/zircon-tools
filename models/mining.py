@@ -1,10 +1,10 @@
 import sqlite3
 
-import config
-from models.db_utils import (
+import config.config as config
+from utils.db_utils import (
     init_db, get_single_record, upsert_record, reset_db as reset_db_table, get_rank, get_current_datetime, handle_db_error
 )
-import util
+from utils import helpers as util
 
 
 # 国を無視した個人の採掘累計のテーブル作成

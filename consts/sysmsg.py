@@ -17,7 +17,7 @@ ERROR_MESSAGES = {
 }
 
 # 動的メッセージ生成
-import config
+import config.config as config
 
 def _format_announce_times(hours, minutes):
     """設定の時・分から日本語表記の時間列を生成
