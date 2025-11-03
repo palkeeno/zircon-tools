@@ -1,10 +1,7 @@
 # project setting
 *.db
 .archive
-prd/
-csv/
 backups/
-.trunk/
 data/
 
 # Byte-compiled / optimized / DLL files
