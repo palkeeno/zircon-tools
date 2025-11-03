@@ -222,9 +222,9 @@ async def zmrole(
 
         # Case 3: 設定削除
         if great_prob is None and excellent_prob is None and priority is None:
-            initial_len = len(role_manager.cache)
-            role_manager.cache = [r for r in role_manager.cache if r['role_name'] != role_name]
-            if len(role_manager.cache) < initial_len:
+            # Use manager method to remove and compact priorities
+            removed = role_manager.remove_role(role_name)
+            if removed:
                 role_manager.save()
                 await interaction.response.send_message(f"ロール「{role_name}」の設定を削除しました。", ephemeral=False)
             else:
@@ -331,6 +331,7 @@ async def zmprob(
         actuals[2] = round((thresholds[2] - thresholds[1]) * 100, 2)
         return actuals
 
+    # id, prob, zirnum すべてNone → 現在値表示
     if id is None and prob is None and zirnum is None:
         probs = get_current_probs_percent()
         msg = "【現在の採掘確率・ジルコン数設定】\n"
@@ -339,6 +340,29 @@ async def zmprob(
         await interaction.response.send_message(msg, ephemeral=False)
         return
 
+    # idのみ指定、zirnumのみ指定（probはNone）→採掘量のみ変更
+    if id in [0, 1, 2] and prob is None and zirnum is not None:
+        if not (isinstance(zirnum, int) and zirnum >= 1):
+            await interaction.response.send_message("zirnumは1以上の整数で指定してください。", ephemeral=False)
+            return
+        probability = config.get_probability()
+        found = False
+        for p in probability:
+            if p['id'] == id:
+                p['zirnum'] = zirnum
+                found = True
+                break
+        if not found:
+            await interaction.response.send_message("指定したidの設定が見つかりません。", ephemeral=False)
+            return
+        settings_manager.set_probability(probability)
+        msg = "【採掘量のみ更新しました】\n"
+        for i, p in enumerate(probability):
+            msg += f"id:{p['id']} [{p['msg']}]  発生確率: {round(p['prob']*100,2)}%  ジルコン: {p['zirnum']}\n"
+        await interaction.response.send_message(msg, ephemeral=False)
+        return
+
+    # 通常の確率・採掘量変更（id, prob, zirnum指定）
     if id not in [0, 1, 2]:
         await interaction.response.send_message("idは0(Excellent), 1(Great), 2(Good)のみ指定できます。", ephemeral=False)
         return

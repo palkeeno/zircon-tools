@@ -98,3 +98,30 @@ class RoleProbabilityManager:
         target_role['updated_at'] = datetime.now().isoformat()
         
         return True 
+
+    def remove_role(self, target_role_name):
+        """対象ロールを削除し、削除された優先度より下にあるロールの優先度を1つ上げて詰める"""
+        target_role = None
+        for role in self.cache:
+            if role['role_name'] == target_role_name:
+                target_role = role
+                break
+
+        if not target_role:
+            return False
+
+        removed_priority = target_role['priority']
+
+        # Remove the target role
+        self.cache = [r for r in self.cache if r['role_name'] != target_role_name]
+
+        # Decrement priority for roles with priority > removed_priority
+        changed = False
+        for role in self.cache:
+            if role.get('priority') and role['priority'] > removed_priority:
+                role['priority'] = role['priority'] - 1
+                role['updated_at'] = datetime.now().isoformat()
+                changed = True
+
+        # If roles changed (or removal happened), consider it successful
+        return True

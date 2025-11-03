@@ -63,7 +63,8 @@ class SettingsManager:
         self.save_settings()
     
     def get_mine_open(self) -> bool:
-        """鉱山の営業状況を取得"""
+        """鉱山の営業状況を取得（毎回ファイル再読込）"""
+        self.load_settings()
         return self.get("mine_open", True)
     
     def set_mine_open(self, value: bool):
