@@ -2,7 +2,7 @@ import csv
 import traceback
 from datetime import datetime
 
-import config
+import config.config as config
 
 
 # エラーハンドリング関数
@@ -56,6 +56,19 @@ def get_country_by_roleid(roleid):
     except Exception as e:
         handle_util_error(e, "get_country_by_roleid")
         return None
+
+# 採掘ロールを持っているか判定
+def has_mining_role(user):
+    try:
+        if user is None:
+            return False
+        for usr_role in user.roles:
+            if usr_role.id == config.MINING_ROLE:
+                return True
+        return False
+    except Exception as e:
+        handle_util_error(e, "has_mining_role")
+        return False
 
 
 # csvで書き出し

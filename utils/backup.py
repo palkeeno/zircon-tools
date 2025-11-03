@@ -2,7 +2,7 @@ import os
 import shutil
 import datetime
 from typing import List
-from config import DB_MINING, DB_USERS
+import config.config as config
 from consts.const import JST
 
 def create_backup() -> List[str]:
@@ -19,7 +19,7 @@ def create_backup() -> List[str]:
     backup_files = []
 
     # 各データベースファイルのバックアップを作成
-    for db_path in [DB_MINING, DB_USERS]:
+    for db_path in [config.DB_MINING, config.DB_USERS]:
         if os.path.exists(db_path):
             backup_path = os.path.join(backup_dir, f"{os.path.basename(db_path)}_{timestamp}")
             shutil.copy2(db_path, backup_path)
@@ -51,7 +51,7 @@ def cleanup_old_backups(days_to_keep: int = 10) -> None:
 def cleanup_excess_backups(max_files: int = 10) -> None:
     """各DBごとにバックアップファイルがmax_files個を超えていたら古いものから削除する"""
     backup_dir = "backups"
-    for db_name in [os.path.basename(DB_MINING), os.path.basename(DB_USERS)]:
+    for db_name in [os.path.basename(config.DB_MINING), os.path.basename(config.DB_USERS)]:
         prefix = db_name + "_"
         db_backups = [f for f in os.listdir(backup_dir) if f.startswith(prefix)]
         if len(db_backups) > max_files:

@@ -1,5 +1,5 @@
 import discord
-import config
+from config.settings_manager import settings_manager
 
 def mine_status(isMineOpen):
     return "OPEN" if isMineOpen else "CLOSE"
@@ -10,10 +10,10 @@ class MineStatusView(discord.ui.View):
         
     @discord.ui.button(label="OPEN", style=discord.ButtonStyle.green)
     async def open_mine(self, interaction: discord.Interaction, button: discord.ui.Button):
-        config.MINE_OPEN = True
+        settings_manager.set_mine_open(True)
         await interaction.response.send_message(mine_status(True), ephemeral=True)
         
-    @discord.ui.button(label="CLOSE", style=discord.ButtonStyle.red)
+    @discord.ui.button(label="CLOSE", style=discord.ButtonStyle.red)                                                                                                        
     async def close_mine(self, interaction: discord.Interaction, button: discord.ui.Button):
-        config.MINE_OPEN = False
+        settings_manager.set_mine_open(False)
         await interaction.response.send_message(mine_status(False), ephemeral=True) 

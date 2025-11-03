@@ -10,6 +10,12 @@ if ENV == "production":
 else:
     load_dotenv(".env.development")
 
+# 設定マネージャーのインポート
+from config.settings_manager import SettingsManager
+
+# 設定マネージャーのインスタンスを作成
+settings = SettingsManager()
+
 #### Load Env (Sensitive Information) ####
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DB_MINING = os.getenv("DB_MINING")
@@ -24,12 +30,16 @@ BRAVE_CHAT = int(os.getenv("BRAVE_CHAT"))
 FREEDOM_CHAT = int(os.getenv("FREEDOM_CHAT"))
 GLORY_CHAT = int(os.getenv("GLORY_CHAT"))
 PEACEFUL_CHAT = int(os.getenv("PEACEFUL_CHAT"))
+# 国未所属者用Excellent報告チャンネル
+MINING_EXCELLENT_CHAT = int(os.getenv("MINING_EXCELLENT_CHAT"))
 
 # Roles
 BRAVE_ROLE = int(os.getenv("BRAVE_ROLE"))
 FREEDOM_ROLE = int(os.getenv("FREEDOM_ROLE"))
 GLORY_ROLE = int(os.getenv("GLORY_ROLE"))
 PEACEFUL_ROLE = int(os.getenv("PEACEFUL_ROLE"))
+# 採掘ロール
+MINING_ROLE = int(os.getenv("MINING_ROLE"))
 
 # Emojis
 BRAVE_EMOJI = os.getenv("BRAVE_EMOJI")
@@ -37,19 +47,6 @@ FREEDOM_EMOJI = os.getenv("FREEDOM_EMOJI")
 GLORY_EMOJI = os.getenv("GLORY_EMOJI")
 PEACEFUL_EMOJI = os.getenv("PEACEFUL_EMOJI")
 
-# mining flag
-MINE_OPEN = True
-
-# announce clock
-ANN_HOUR = [0, 12]
-ANN_MINUTE = [0]
-
-# mining probability
-PROBABILITY = [
-    {'id':0,    'msg':'Excellent',    'prob':0.03,    'zirnum':10},
-    {'id':1,    'msg':'Great',         'prob':0.25,    'zirnum':3},
-    {'id':2,    'msg':'Good',           'prob':1,       'zirnum':1}
-]
 
 # country roles id
 COUNTRIES = [
@@ -58,3 +55,20 @@ COUNTRIES = [
     {'id':3, 'role':GLORY_ROLE, 'name':'Glory',    'chid':GLORY_CHAT,    'stmp':GLORY_EMOJI}, # glory
     {'id':4, 'role':PEACEFUL_ROLE, 'name':'Peaceful', 'chid':PEACEFUL_CHAT,    'stmp':PEACEFUL_EMOJI}  # peaceful
 ]
+
+# 設定値を動的に取得する関数
+def get_mine_open():
+    """鉱山の営業状況を動的に取得"""
+    return settings.get_mine_open()
+
+def get_announce_hour():
+    """アナウンス時間の時を動的に取得"""
+    return settings.get_announce_hour()
+
+def get_announce_minute():
+    """アナウンス時間の分を動的に取得"""
+    return settings.get_announce_minute()
+
+def get_probability():
+    """採掘確率設定を動的に取得"""
+    return settings.get_probability()

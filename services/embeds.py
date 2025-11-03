@@ -1,7 +1,7 @@
 import discord
 import traceback
 
-from util import ordinal
+from utils.helpers import ordinal
 
 
 # エラーハンドリング関数
