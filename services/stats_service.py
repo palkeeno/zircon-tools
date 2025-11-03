@@ -11,27 +11,23 @@ async def get_stats_self(interaction: discord.Interaction):
     """自身の統計量表示アクション"""
     try:
         country = get_country(interaction.user)
-        if country is None:
-            await interaction.response.send_message(
-                content="国選択をした方のみ参加できます！", ephemeral=True
-            )
-            return
+        roleid = country["role"] if country is not None else 0
         # 基本採掘情報を取得
-        result_mining = await mining.get_user_single(interaction.user.id, country["role"])
+        result_mining = await mining.get_user_single(interaction.user.id, roleid)
         result_lifetime = await users.get_single(interaction.user.id)
         if result_lifetime is None:
             await interaction.response.send_message(SysMsg.DATA_NOT_FOUND, ephemeral=True)
             return
         elif result_mining is None:
-            result_mining = [int(interaction.user.id), country["id"], 0, 0, 0, 0, 0]
-        
-        # 自分のランクを取得
-        rank_list = await mining.get_rank_user_country(country["role"])
+            result_mining = [int(interaction.user.id), country["id"] if country else 0, 0, 0, 0, 0, 0]
+        # 自分のランクを取得（国ロール保持者のみ）
         rank_self = 0
-        for r in rank_list:
-            if r[1] == interaction.user.id:  # r[1]はuserid
-                rank_self = r[0]  # r[0]はrank
-                break
+        if country is not None:
+            rank_list = await mining.get_rank_user_country(country["role"])
+            for r in rank_list:
+                if r[1] == interaction.user.id:
+                    rank_self = r[0]
+                    break
         
         # 適用ロールを取得
         role_manager = RoleProbabilityManager()
@@ -66,7 +62,7 @@ async def get_stats_country(interaction: discord.Interaction):
         country = get_country(interaction.user)
         if country is None:
             await interaction.response.send_message(
-                content="国選択をした方のみ参加できます！", ephemeral=True
+                content="国ロール未保持者は国サマリを表示できません。", ephemeral=True
             )
             return
         # 国統計データを取得

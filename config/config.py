@@ -30,12 +30,16 @@ BRAVE_CHAT = int(os.getenv("BRAVE_CHAT"))
 FREEDOM_CHAT = int(os.getenv("FREEDOM_CHAT"))
 GLORY_CHAT = int(os.getenv("GLORY_CHAT"))
 PEACEFUL_CHAT = int(os.getenv("PEACEFUL_CHAT"))
+# 国未所属者用Excellent報告チャンネル
+MINING_EXCELLENT_CHAT = int(os.getenv("MINING_EXCELLENT_CHAT"))
 
 # Roles
 BRAVE_ROLE = int(os.getenv("BRAVE_ROLE"))
 FREEDOM_ROLE = int(os.getenv("FREEDOM_ROLE"))
 GLORY_ROLE = int(os.getenv("GLORY_ROLE"))
 PEACEFUL_ROLE = int(os.getenv("PEACEFUL_ROLE"))
+# 採掘ロール
+MINING_ROLE = int(os.getenv("MINING_ROLE"))
 
 # Emojis
 BRAVE_EMOJI = os.getenv("BRAVE_EMOJI")
