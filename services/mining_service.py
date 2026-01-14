@@ -51,7 +51,12 @@ async def mining_zircon(interaction: discord.Interaction, client):
 
         # ガチャ演出のランダム化 random_performance_key, performance_num
         rpk = random.randint(1,100)
-        pn_gif = int(rpk % 4)
+        # 演出GIFファイルの枚数を動的に取得
+        gif_count = get_mining_image_count("mining", ".gif")
+        if gif_count == 0:
+            # GIFが見つからない場合はデフォルト値を使用
+            gif_count = 1
+        pn_gif = int(rpk % gif_count)
         # ガチャ演出の表示
         fn_gif=f"mining{pn_gif}.gif"
         gif_mining = discord.File(
