@@ -1,7 +1,7 @@
 import asyncio
 import random
 import discord
-from utils.helpers import get_country, gacha, has_mining_role
+from utils.helpers import get_country, gacha, has_mining_role, get_mining_image_count
 from models import mining, users
 import config.config as config
 from config.role_manager import RoleProbabilityManager
@@ -62,7 +62,12 @@ async def mining_zircon(interaction: discord.Interaction, client):
         mining_msg = await interaction.followup.send(embed=em1, file=gif_mining, ephemeral=True)
         await asyncio.sleep(3)
 
-        pn_img = int(rpk % (result["id"] + 3))
+        # ガチャ結果タイプに対応する画像ファイルの枚数を動的に取得
+        image_count = get_mining_image_count(result["msg"])
+        if image_count == 0:
+            # 画像が見つからない場合はデフォルト値を使用
+            image_count = 1
+        pn_img = int(rpk % image_count)
         fn_img = f"{result['msg']}{pn_img}.png"
         img_mresult = discord.File(
             fp=f"{config.CWD}/assets/{fn_img}",

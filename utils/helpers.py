@@ -1,4 +1,5 @@
 import csv
+import os
 import traceback
 from datetime import datetime
 
@@ -122,3 +123,35 @@ def ordinal(n):
     except Exception as e:
         handle_util_error(e, "ordinal")
         return str(n)
+
+
+# ガチャ結果タイプに対応する画像ファイルの枚数を取得
+def get_mining_image_count(result_msg: str) -> int:
+    """ガチャ結果タイプ（Excellent, Great, Goodなど）に対応する画像ファイルの枚数を動的に取得
+    
+    Args:
+        result_msg (str): ガチャ結果のメッセージ（例: "Excellent", "Great", "Good"）
+    
+    Returns:
+        int: 該当する画像ファイルの枚数。見つからない場合は0を返す
+    """
+    try:
+        assets_dir = os.path.join(config.CWD, "assets")
+        if not os.path.exists(assets_dir):
+            return 0
+        
+        # 指定されたメッセージタイプで始まるPNGファイルを検索
+        count = 0
+        prefix = result_msg
+        for filename in os.listdir(assets_dir):
+            if filename.startswith(prefix) and filename.endswith(".png"):
+                # ファイル名が "{prefix}{数字}.png" の形式かチェック
+                # 例: "Excellent0.png", "Excellent1.png" など
+                remaining = filename[len(prefix):-4]  # 拡張子を除いた残り部分
+                if remaining.isdigit():
+                    count += 1
+        
+        return count
+    except Exception as e:
+        handle_util_error(e, "get_mining_image_count")
+        return 0
