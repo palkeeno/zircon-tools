@@ -98,6 +98,29 @@ PEACEFUL_EMOJI=peaceful_emoji
 python zrmine.py
 ```
 
+### 本番環境での監視起動
+
+本番環境では、cronから直接Pythonを起動せず、監視スクリプトを使用します。
+監視スクリプトはプロジェクトディレクトリへ移動し、`ENV=production`、非バッファリング出力、PID管理を設定して起動します。
+
+```cron
+* * * * * /bin/bash /home/zircon-mining/scripts/checkps.sh
+```
+
+cronへ登録する前に、production設定と実行ファイルを検証できます。この確認ではBotを起動しません。
+
+```bash
+/bin/bash /home/zircon-mining/scripts/checkps.sh --check
+```
+
+標準の配置先は以下です。
+
+- Botログ: `/home/zircon-mining/nohup.out`
+- 監視ログ: `/home/zircon-mining/log/checkps.log`
+- PID・ロックファイル: `/home/zircon-mining/run/`
+
+Pythonやログの場所を変更する場合は、`ZIRCON_PYTHON_BIN`、`ZIRCON_APP_LOG`、`ZIRCON_WATCHDOG_LOG`をcron側で指定できます。
+
 ## コマンド
 
 ### 管理者コマンド
