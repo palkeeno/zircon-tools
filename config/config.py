@@ -1,14 +1,15 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 # 環境変数の設定
 ENV = os.getenv("ENV", "development")  # デフォルトは開発環境
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # 環境に応じた.envファイルを読み込む
-if ENV == "production":
-    load_dotenv(".env.production")
-else:
-    load_dotenv(".env.development")
+ENV_FILE = ".env.production" if ENV == "production" else ".env.development"
+load_dotenv(PROJECT_ROOT / ENV_FILE)
 
 # 設定マネージャーのインポート
 from config.settings_manager import SettingsManager
