@@ -32,17 +32,7 @@ FREEDOM_CHAT = int(os.getenv("FREEDOM_CHAT"))
 GLORY_CHAT = int(os.getenv("GLORY_CHAT"))
 PEACEFUL_CHAT = int(os.getenv("PEACEFUL_CHAT"))
 # 国未所属者用Excellent報告チャンネル
-_MINING_EXCELLENT_CHANNEL = os.getenv("MINING_EXCELLENT_CH") or os.getenv(
-    "MINING_EXCELLENT_CHAT"
-)
-if not _MINING_EXCELLENT_CHANNEL:
-    raise RuntimeError(
-        f"MINING_EXCELLENT_CH is not configured in {ENV_FILE} "
-        "(legacy MINING_EXCELLENT_CHAT is also supported)"
-    )
-MINING_EXCELLENT_CH = int(_MINING_EXCELLENT_CHANNEL)
-# 2025-11版で使用していた名前。既存の設定・参照との互換性のため残す。
-MINING_EXCELLENT_CHAT = MINING_EXCELLENT_CH
+MINING_EXCELLENT_CHAT = int(os.getenv("MINING_EXCELLENT_CHAT"))
 
 # Roles
 BRAVE_ROLE = int(os.getenv("BRAVE_ROLE"))

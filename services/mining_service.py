@@ -12,7 +12,7 @@ from services.embeds import mining_performance, mining as mining_embed, excellen
 
 def get_excellent_channel_id(country):
     """Excellent通知先を返す。国未所属者は共通雑談チャンネルに送る。"""
-    return country["chid"] if country is not None else config.MINING_EXCELLENT_CH
+    return country["chid"] if country is not None else config.MINING_EXCELLENT_CHAT
 
 
 async def get_channel(client, channel_id):
