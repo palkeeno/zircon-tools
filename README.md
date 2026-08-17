@@ -83,6 +83,7 @@ BRAVE_CHAT=brave_chat_channel_id
 FREEDOM_CHAT=freedom_chat_channel_id
 GLORY_CHAT=glory_chat_channel_id
 PEACEFUL_CHAT=peaceful_chat_channel_id
+MINING_EXCELLENT_CH=unaffiliated_user_excellent_channel_id
 BRAVE_ROLE=brave_role_id
 FREEDOM_ROLE=freedom_role_id
 GLORY_ROLE=glory_role_id
@@ -93,10 +94,42 @@ GLORY_EMOJI=glory_emoji
 PEACEFUL_EMOJI=peaceful_emoji
 ```
 
+`MINING_EXCELLENT_CH` は、国に所属していないユーザーがExcellentを出したときの投稿先です。
+旧設定名 `MINING_EXCELLENT_CHAT` も互換性のため利用できます。
+
 ### 実行
 ```bash
 python zrmine.py
 ```
+
+本番設定を使って直接起動する場合は、`ENV=production` を明示します。
+
+```bash
+ENV=production python zrmine.py
+```
+
+### 本番環境での監視起動
+
+本番環境では、cronから直接Pythonを起動せず、監視スクリプトを使用します。
+監視スクリプトはプロジェクトディレクトリへ移動し、`ENV=production`、非バッファリング出力、PID管理を設定して起動します。
+
+```cron
+* * * * * /bin/bash /home/zircon-mining/scripts/checkps.sh
+```
+
+cronへ登録する前に、production設定と実行ファイルを検証できます。この確認ではBotを起動しません。
+
+```bash
+/bin/bash /home/zircon-mining/scripts/checkps.sh --check
+```
+
+標準の配置先は以下です。
+
+- Botログ: `/home/zircon-mining/nohup.out`
+- 監視ログ: `/home/zircon-mining/log/checkps.log`
+- PID・ロックファイル: `/home/zircon-mining/run/`
+
+Pythonやログの場所を変更する場合は、`ZIRCON_PYTHON_BIN`、`ZIRCON_APP_LOG`、`ZIRCON_WATCHDOG_LOG`をcron側で指定できます。
 
 ## コマンド
 

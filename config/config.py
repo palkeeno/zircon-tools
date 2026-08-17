@@ -1,14 +1,15 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 # 環境変数の設定
 ENV = os.getenv("ENV", "development")  # デフォルトは開発環境
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # 環境に応じた.envファイルを読み込む
-if ENV == "production":
-    load_dotenv(".env.production")
-else:
-    load_dotenv(".env.development")
+ENV_FILE = ".env.production" if ENV == "production" else ".env.development"
+load_dotenv(PROJECT_ROOT / ENV_FILE)
 
 # 設定マネージャーのインポート
 from config.settings_manager import SettingsManager
@@ -31,7 +32,17 @@ FREEDOM_CHAT = int(os.getenv("FREEDOM_CHAT"))
 GLORY_CHAT = int(os.getenv("GLORY_CHAT"))
 PEACEFUL_CHAT = int(os.getenv("PEACEFUL_CHAT"))
 # 国未所属者用Excellent報告チャンネル
-MINING_EXCELLENT_CHAT = int(os.getenv("MINING_EXCELLENT_CHAT"))
+_MINING_EXCELLENT_CHANNEL = os.getenv("MINING_EXCELLENT_CH") or os.getenv(
+    "MINING_EXCELLENT_CHAT"
+)
+if not _MINING_EXCELLENT_CHANNEL:
+    raise RuntimeError(
+        f"MINING_EXCELLENT_CH is not configured in {ENV_FILE} "
+        "(legacy MINING_EXCELLENT_CHAT is also supported)"
+    )
+MINING_EXCELLENT_CH = int(_MINING_EXCELLENT_CHANNEL)
+# 2025-11版で使用していた名前。既存の設定・参照との互換性のため残す。
+MINING_EXCELLENT_CHAT = MINING_EXCELLENT_CH
 
 # Roles
 BRAVE_ROLE = int(os.getenv("BRAVE_ROLE"))
