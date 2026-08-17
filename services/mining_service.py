@@ -10,6 +10,41 @@ from consts import const
 from services.embeds import mining_performance, mining as mining_embed, excellent
 
 
+def get_excellent_channel_id(country):
+    """Excellent通知先を返す。国未所属者は共通雑談チャンネルに送る。"""
+    return country["chid"] if country is not None else config.MINING_EXCELLENT_CH
+
+
+async def get_channel(client, channel_id):
+    """キャッシュを優先し、未取得ならDiscord APIからチャンネルを取得する。"""
+    channel = client.get_channel(channel_id)
+    if channel is None:
+        channel = await client.fetch_channel(channel_id)
+    if not callable(getattr(channel, "send", None)):
+        raise TypeError(f"Excellent通知先に送信できません: channel_id={channel_id}")
+    return channel
+
+
+async def send_excellent_notification(client, user, country):
+    """Excellent結果を国別、または国未所属者用の雑談チャンネルへ送る。"""
+    channel_id = get_excellent_channel_id(country)
+    channel = await get_channel(client, channel_id)
+    img_ex = discord.File(
+        fp=f"{config.CWD}/assets/{const.EX_CELEB}",
+        filename=const.EX_CELEB,
+    )
+    await channel.send(file=img_ex, embed=excellent(user))
+
+
+async def send_mining_error(interaction):
+    """Interactionの応答状況に合わせて採掘エラーを通知する。"""
+    kwargs = {"content": "採掘処理中にエラーが発生しました。", "ephemeral": True}
+    if interaction.response.is_done():
+        await interaction.followup.send(**kwargs)
+    else:
+        await interaction.response.send_message(**kwargs)
+
+
 async def mining_zircon(interaction: discord.Interaction, client):
     """ジルコン採掘アクション"""
     try:
@@ -84,18 +119,7 @@ async def mining_zircon(interaction: discord.Interaction, client):
         await interaction.followup.send(embed=em2, file=img_mresult, ephemeral=True)
         # 採掘結果が「Excellent!!」の場合、各国雑談チャンネルに投稿する
         if isExcellent:
-            exc_embed = excellent(interaction.user)
-            if country is not None:
-                channel = client.get_channel(country["chid"])
-            else:
-                channel = client.get_channel(config.MINING_EXCELLENT_CHAT)
-            img_ex = discord.File(
-                fp=f"{config.CWD}/assets/{const.EX_CELEB}",
-                filename=f"{const.EX_CELEB}",
-            )
-            await channel.send(file=img_ex, embed=exc_embed)
+            await send_excellent_notification(client, interaction.user, country)
     except Exception as e:
-        print(f"採掘処理エラー: {e}")
-        await interaction.response.send_message(
-            content="採掘処理中にエラーが発生しました。", ephemeral=True
-        )
+        print(f"採掘処理エラー ({type(e).__name__}): {e}")
+        await send_mining_error(interaction)

@@ -83,6 +83,7 @@ BRAVE_CHAT=brave_chat_channel_id
 FREEDOM_CHAT=freedom_chat_channel_id
 GLORY_CHAT=glory_chat_channel_id
 PEACEFUL_CHAT=peaceful_chat_channel_id
+MINING_EXCELLENT_CH=unaffiliated_user_excellent_channel_id
 BRAVE_ROLE=brave_role_id
 FREEDOM_ROLE=freedom_role_id
 GLORY_ROLE=glory_role_id
@@ -93,9 +94,18 @@ GLORY_EMOJI=glory_emoji
 PEACEFUL_EMOJI=peaceful_emoji
 ```
 
+`MINING_EXCELLENT_CH` は、国に所属していないユーザーがExcellentを出したときの投稿先です。
+旧設定名 `MINING_EXCELLENT_CHAT` も互換性のため利用できます。
+
 ### 実行
 ```bash
 python zrmine.py
+```
+
+本番設定を使って直接起動する場合は、`ENV=production` を明示します。
+
+```bash
+ENV=production python zrmine.py
 ```
 
 ### 本番環境での監視起動

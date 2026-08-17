@@ -48,6 +48,11 @@ validate_configuration() {
         return 1
     fi
 
+    if ! grep -Eq '^[[:space:]]*(export[[:space:]]+)?MINING_EXCELLENT_(CH|CHAT)[[:space:]]*=' "$ENV_FILE"; then
+        configuration_error="MINING_EXCELLENT_CH is not defined in $ENV_FILE"
+        return 1
+    fi
+
     return 0
 }
 
